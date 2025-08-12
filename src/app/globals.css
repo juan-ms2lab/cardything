@@ -24,3 +24,242 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom slider styling */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Mini slider styling for header controls */
+.slider-mini {
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 20px; /* Match other header elements */
+}
+
+.slider-mini::-webkit-slider-track {
+  background: #d1d5db;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.slider-mini::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-top: -6px; /* Center the thumb */
+}
+
+.slider-mini::-moz-range-track {
+  background: #d1d5db;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+.slider-mini::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  -moz-appearance: none;
+}
+
+/* Calendar improvements - Complete structural override */
+.rbc-calendar {
+  position: relative;
+}
+
+/* Force proper calendar structure */
+.rbc-month-view {
+  position: relative !important;
+}
+
+.rbc-month-view .rbc-month-row {
+  position: relative !important;
+  min-height: 120px !important;
+}
+
+.rbc-month-view .rbc-date-cell {
+  min-height: 120px !important;
+  position: relative !important;
+  vertical-align: top !important;
+  padding: 0 !important;
+}
+
+/* Date number positioning - keep it small and at top */
+.rbc-month-view .rbc-date-cell .rbc-button-link {
+  position: absolute !important;
+  top: 2px !important;
+  left: 4px !important;
+  z-index: 10 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: none !important;
+  border-radius: 3px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  min-width: 20px !important;
+  text-align: center !important;
+}
+
+/* Day background - for drag highlighting */
+.rbc-day-bg {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 0 !important;
+}
+
+/* Completely override event positioning */
+.rbc-month-view .rbc-row-content {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 5 !important;
+  padding-top: 26px !important; /* Space for date number */
+  padding: 26px 4px 4px 4px !important;
+}
+
+.rbc-month-view .rbc-row-segment {
+  position: relative !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+
+/* Events styling */
+.rbc-event {
+  font-size: 10px !important;
+  padding: 1px 3px !important;
+  margin: 0 !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+  user-select: none !important;
+  position: relative !important;
+  z-index: 20 !important;
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.2 !important;
+  min-height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.rbc-event:hover {
+  opacity: 0.9 !important;
+  z-index: 25 !important;
+  transform: scale(1.02) !important;
+}
+
+/* Drag highlight styling - using pseudo-element to avoid layout shift */
+.rbc-day-bg.calendar-drag-highlight,
+.rbc-date-cell.calendar-drag-highlight,
+[role="cell"].calendar-drag-highlight {
+  position: relative !important;
+}
+
+.rbc-day-bg.calendar-drag-highlight::before,
+.rbc-date-cell.calendar-drag-highlight::before,
+[role="cell"].calendar-drag-highlight::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  border: 2px dashed rgba(59, 130, 246, 0.6) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix for month view table layout */
+.rbc-month-view .rbc-month-header {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.rbc-month-view table {
+  table-layout: fixed !important;
+}
+
+.rbc-month-view .rbc-date-cell,
+.rbc-month-view .rbc-header {
+  vertical-align: top !important;
+}
+
+.rbc-addons-dnd .rbc-event {
+  cursor: grab !important;
+}
+
+.rbc-addons-dnd .rbc-event:active {
+  cursor: grabbing !important;
+}
+
+/* Improve day cell appearance */
+.rbc-date-cell > button {
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.rbc-date-cell > button:hover {
+  background-color: #f3f4f6;
+}
+
+/* Prevent text selection during drag */
+.rbc-calendar * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.rbc-calendar input,
+.rbc-calendar textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
