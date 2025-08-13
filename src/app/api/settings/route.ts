@@ -3,22 +3,30 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+interface ExtendedUser {
+  id: string
+  email?: string | null
+  name?: string | null
+  image?: string | null
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session?.user as ExtendedUser)?.id
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     let settings = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id }
+      where: { userId }
     })
 
     if (!settings) {
       // Create default settings if none exist
       settings = await prisma.userSettings.create({
         data: {
-          userId: session.user.id
+          userId
         }
       })
     }
@@ -33,14 +41,15 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session?.user as ExtendedUser)?.id
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const settingsData = await request.json()
 
     const settings = await prisma.userSettings.upsert({
-      where: { userId: session.user.id },
+      where: { userId },
       update: {
         backgroundColor: settingsData.backgroundColor,
         todayColor: settingsData.todayColor,
@@ -52,7 +61,7 @@ export async function PUT(request: NextRequest) {
         spacingLevel: settingsData.spacingLevel
       },
       create: {
-        userId: session.user.id,
+        userId,
         backgroundColor: settingsData.backgroundColor,
         todayColor: settingsData.todayColor,
         thisWeekColor: settingsData.thisWeekColor,

@@ -97,169 +97,163 @@ body {
   -moz-appearance: none;
 }
 
-/* Calendar improvements - Complete structural override */
-.rbc-calendar {
-  position: relative;
+/* FullCalendar styling - much simpler and cleaner */
+.fc {
+  font-family: inherit;
 }
 
-/* Force proper calendar structure */
-.rbc-month-view {
-  position: relative !important;
+.fc-event {
+  cursor: grab;
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 0 !important; /* Remove padding so custom content controls it */
+  border: none !important;
+  min-height: 26px !important; /* Ensure adequate height */
+  overflow: hidden;
+  width: 100% !important; /* Take full width of container */
 }
 
-.rbc-month-view .rbc-month-row {
-  position: relative !important;
-  min-height: 120px !important;
+.fc-event .fc-event-main {
+  padding: 0 !important; /* Remove default padding */
+  width: 100% !important; /* Ensure full width */
 }
 
-.rbc-month-view .rbc-date-cell {
-  min-height: 120px !important;
-  position: relative !important;
-  vertical-align: top !important;
+.fc-daygrid-event {
+  margin: 1px 2px !important; /* Add small margin between events and from cell edges */
+  width: calc(100% - 4px) !important; /* Full width minus margins */
+}
+
+.fc-daygrid-event .fc-event-main {
+  width: 100% !important;
+}
+
+/* Ensure events stretch across the full day cell */
+.fc-daygrid-day-events {
+  margin: 0 !important;
   padding: 0 !important;
 }
 
-/* Date number positioning - keep it small and at top */
-.rbc-month-view .rbc-date-cell .rbc-button-link {
-  position: absolute !important;
-  top: 2px !important;
-  left: 4px !important;
-  z-index: 10 !important;
-  background: rgba(255, 255, 255, 0.8) !important;
-  border: none !important;
-  border-radius: 3px !important;
-  padding: 2px 6px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  min-width: 20px !important;
-  text-align: center !important;
-}
-
-/* Day background - for drag highlighting */
-.rbc-day-bg {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 0 !important;
-}
-
-/* Completely override event positioning */
-.rbc-month-view .rbc-row-content {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 5 !important;
-  padding-top: 26px !important; /* Space for date number */
-  padding: 26px 4px 4px 4px !important;
-}
-
-.rbc-month-view .rbc-row-segment {
-  position: relative !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 1px !important;
-}
-
-/* Events styling */
-.rbc-event {
-  font-size: 10px !important;
-  padding: 1px 3px !important;
+.fc-daygrid-event-harness {
   margin: 0 !important;
-  border-radius: 2px !important;
-  overflow: hidden !important;
-  user-select: none !important;
-  position: relative !important;
-  z-index: 20 !important;
-  border: none !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-  line-height: 1.2 !important;
-  min-height: 16px !important;
-  display: flex !important;
-  align-items: center !important;
 }
 
-.rbc-event:hover {
-  opacity: 0.9 !important;
-  z-index: 25 !important;
-  transform: scale(1.02) !important;
+.fc-event:hover {
+  opacity: 0.9;
+  transition: opacity 0.1s ease;
 }
 
-/* Drag highlight styling - using pseudo-element to avoid layout shift */
-.rbc-day-bg.calendar-drag-highlight,
-.rbc-date-cell.calendar-drag-highlight,
-[role="cell"].calendar-drag-highlight {
-  position: relative !important;
-}
-
-.rbc-day-bg.calendar-drag-highlight::before,
-.rbc-date-cell.calendar-drag-highlight::before,
-[role="cell"].calendar-drag-highlight::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background-color: rgba(59, 130, 246, 0.1) !important;
-  border: 2px dashed rgba(59, 130, 246, 0.6) !important;
-  z-index: 1 !important;
-  pointer-events: none !important;
-  box-sizing: border-box !important;
-}
-
-/* Fix for month view table layout */
-.rbc-month-view .rbc-month-header {
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-.rbc-month-view table {
-  table-layout: fixed !important;
-}
-
-.rbc-month-view .rbc-date-cell,
-.rbc-month-view .rbc-header {
-  vertical-align: top !important;
-}
-
-.rbc-addons-dnd .rbc-event {
-  cursor: grab !important;
-}
-
-.rbc-addons-dnd .rbc-event:active {
+.fc-event-dragging {
   cursor: grabbing !important;
+  opacity: 0.7 !important;
+  z-index: 9999 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Improve day cell appearance */
-.rbc-date-cell > button {
-  font-weight: 500;
-  padding: 2px 6px;
-  border-radius: 4px;
+/* Fix cursor offset during drag */
+.fc-event-dragging .fc-event-main {
+  pointer-events: none;
 }
 
-.rbc-date-cell > button:hover {
-  background-color: #f3f4f6;
+/* External drag styling for unscheduled tasks */
+.fc-event.fc-event-external {
+  cursor: grab;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
 }
 
-/* Prevent text selection during drag */
-.rbc-calendar * {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
+.fc-event.fc-event-external:hover {
+  opacity: 0.9;
 }
 
-.rbc-calendar input,
-.rbc-calendar textarea {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
+.fc-event.fc-event-external:active {
+  cursor: grabbing;
+}
+
+/* Ensure draggable elements in sidebar prevent text selection */
+.unscheduled-sidebar .fc-event {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.unscheduled-sidebar .fc-event * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  pointer-events: none !important;
+}
+
+/* Improve drag helper positioning - fix width and positioning */
+.fc-event-mirror {
+  opacity: 0.8 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  width: auto !important;
+  max-width: 200px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Sidebar drag styling */
+.unscheduled-sidebar.drag-active {
+  background-color: rgb(239 246 255) !important;
+  border-color: rgb(59 130 246) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Enhanced hover state for drag target */
+.unscheduled-sidebar.drag-active.drag-over {
+  background-color: rgb(219 234 254) !important;
+  border-color: rgb(37 99 235) !important;
+  box-shadow: inset 0 0 0 2px rgb(59 130 246) !important;
+}
+
+/* Prevent text selection during any drag operation */
+.fc-event,
+.fc-event *,
+.fc-daygrid-event,
+.fc-daygrid-event * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Prevent text selection on the entire calendar during drag */
+.fc-event-dragging ~ .fc-view-harness,
+.fc-event-dragging ~ .fc-view-harness * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Additional global prevention when dragging */
+body.fc-event-dragging,
+body.fc-event-dragging * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Prevent text selection on calendar during any interaction */
+.fc-view-harness {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+}
+
+.fc-daygrid-day {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+}
+
+.fc-daygrid-day-number {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
 }

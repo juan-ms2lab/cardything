@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useKanbanStore, Card } from '@/store/kanban'
-import { Plus, Calendar, Check, X, Trash2 } from 'lucide-react'
+import { Plus, Calendar, Check, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { getSpacingConfig } from '@/utils/spacing'
 

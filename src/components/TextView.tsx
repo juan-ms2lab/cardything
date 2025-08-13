@@ -8,12 +8,6 @@ export function TextView() {
   const { board, setBoard } = useKanbanStore()
   const [textContent, setTextContent] = useState('')
 
-  useEffect(() => {
-    if (board) {
-      generateTextFromBoard()
-    }
-  }, [board]) // generateTextFromBoard is defined inline
-
   const generateTextFromBoard = useCallback(() => {
     if (!board) return
 
@@ -42,6 +36,12 @@ export function TextView() {
     
     setTextContent(text)
   }, [board, setTextContent])
+
+  useEffect(() => {
+    if (board) {
+      generateTextFromBoard()
+    }
+  }, [board, generateTextFromBoard])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab') {

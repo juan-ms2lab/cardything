@@ -3,15 +3,23 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+interface ExtendedUser {
+  id: string
+  email?: string | null
+  name?: string | null
+  image?: string | null
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session?.user as ExtendedUser)?.id
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const board = await prisma.board.findFirst({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
         columns: {
           include: {
@@ -34,7 +42,7 @@ export async function GET() {
       const newBoard = await prisma.board.create({
         data: {
           name: 'My Board',
-          userId: session.user.id,
+          userId,
           columns: {
             create: [
               { name: 'To Do', position: 0 },
@@ -72,7 +80,8 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session?.user as ExtendedUser)?.id
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -81,7 +90,7 @@ export async function PUT(request: NextRequest) {
     // Update the board in the database
     // First, get the existing board
     const existingBoard = await prisma.board.findFirst({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
         columns: {
           include: {
@@ -158,7 +167,7 @@ export async function PUT(request: NextRequest) {
 
     // Fetch the updated board
     const updatedBoard = await prisma.board.findFirst({
-      where: { userId: session.user.id },
+      where: { userId },
       include: {
         columns: {
           include: {
