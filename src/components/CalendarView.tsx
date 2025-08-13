@@ -89,7 +89,13 @@ export function CalendarView() {
       })
     })
 
-    return { events, unscheduledTasks: unscheduled }
+    // Sort unscheduled tasks: incomplete tasks first, then completed tasks
+    const sortedUnscheduled = unscheduled.sort((a, b) => {
+      if (a.completed === b.completed) return 0
+      return a.completed ? 1 : -1 // completed tasks go to end
+    })
+
+    return { events, unscheduledTasks: sortedUnscheduled }
   }, [board])
 
   // Handle drag from external source (unscheduled tasks) to calendar
@@ -225,57 +231,69 @@ export function CalendarView() {
         {/* Unscheduled Tasks Sidebar */}
         <div 
           ref={sidebarRef}
-          className={`unscheduled-sidebar w-80 border-r border-gray-200 bg-gray-50 p-4 transition-colors ${
+          className={`unscheduled-sidebar w-80 border-r border-gray-200 bg-gray-50 flex flex-col transition-colors ${
             draggedEventId ? 'drag-active' : ''
           } ${isOverSidebar && draggedEventId ? 'drag-over' : ''}`}
+          style={{ height: '100vh' }}
         >
-          <h3 className="font-semibold text-gray-900 mb-4">
-            Unscheduled Tasks
-            {draggedEventId && (
-              <span className="block text-xs text-blue-600 font-normal mt-1">
-                Drop here to unschedule
-              </span>
-            )}
-          </h3>
-          
-          <div className="space-y-2 min-h-[200px] rounded-lg p-2 flex-1 overflow-y-auto">
-            {unscheduledTasks.map((task) => (
-              <div
-                key={task.id}
-                data-task-id={task.id}
-                data-fc-event={JSON.stringify({
-                  title: `${task.cardName}: ${task.name}`,
-                  backgroundColor: task.completed ? '#6b7280' : task.cardColor,
-                  borderColor: task.cardColor,
-                  textColor: 'white'
-                })}
-                className="fc-event p-3 bg-white rounded-lg border-l-4 shadow-sm cursor-grab hover:shadow-md transition-all select-none hover:bg-gray-50"
-                style={{ borderLeftColor: task.cardColor }}
-              >
-                <div className="text-sm font-medium text-gray-900 mb-1">
-                  {task.cardName}
-                </div>
-                <div className="text-sm text-gray-700">{task.name}</div>
-                {task.completed && (
-                  <div className="text-xs text-green-600 mt-1">✓ Completed</div>
-                )}
-              </div>
-            ))}
-            
-            {unscheduledTasks.length === 0 && (
-              <div className="text-sm text-gray-500 text-center py-8">
-                All tasks are scheduled!
-              </div>
-            )}
+          {/* Header - Fixed */}
+          <div className="p-4 flex-shrink-0">
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Unscheduled Tasks
+              {draggedEventId && (
+                <span className="block text-xs text-blue-600 font-normal mt-1">
+                  Drop here to unschedule
+                </span>
+              )}
+            </h3>
           </div>
           
-          <div className="mt-4 p-3 bg-white rounded-lg border">
-            <h4 className="font-medium text-gray-900 mb-2">How to use:</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Drag tasks to calendar dates</li>
-              <li>• Drag events between dates</li>
-              <li>• Drop events here to unschedule</li>
-            </ul>
+          {/* Scrollable Task List */}
+          <div className="flex-1 overflow-y-auto px-4">
+            <div className="space-y-2 pb-4">
+              {unscheduledTasks.map((task) => (
+                <div
+                  key={task.id}
+                  data-task-id={task.id}
+                  data-fc-event={JSON.stringify({
+                    title: `${task.cardName}: ${task.name}`,
+                    backgroundColor: task.completed ? '#6b7280' : task.cardColor,
+                    borderColor: task.cardColor,
+                    textColor: 'white'
+                  })}
+                  className={`fc-event p-3 bg-white rounded-lg border-l-4 shadow-sm cursor-grab hover:shadow-md transition-all select-none hover:bg-gray-50 ${
+                    task.completed ? 'opacity-75' : ''
+                  }`}
+                  style={{ borderLeftColor: task.cardColor }}
+                >
+                  <div className="text-sm font-medium text-gray-900 mb-1">
+                    {task.cardName}
+                  </div>
+                  <div className="text-sm text-gray-700">{task.name}</div>
+                  {task.completed && (
+                    <div className="text-xs text-green-600 mt-1">✓ Completed</div>
+                  )}
+                </div>
+              ))}
+              
+              {unscheduledTasks.length === 0 && (
+                <div className="text-sm text-gray-500 text-center py-8">
+                  All tasks are scheduled!
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Footer - Fixed */}
+          <div className="p-4 flex-shrink-0">
+            <div className="p-3 bg-white rounded-lg border">
+              <h4 className="font-medium text-gray-900 mb-2">How to use:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Drag tasks to calendar dates</li>
+                <li>• Drag events between dates</li>
+                <li>• Drop events here to unschedule</li>
+              </ul>
+            </div>
           </div>
         </div>
 

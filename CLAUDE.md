@@ -28,14 +28,17 @@ This file contains important context and instructions for Claude Code when worki
 - **Database**: Prisma with SQLite (dev) / PostgreSQL (prod)
 - **Authentication**: NextAuth.js
 - **State Management**: Zustand
-- **Drag & Drop**: @hello-pangea/dnd
-- **Calendar**: react-big-calendar
+- **Drag & Drop**: @hello-pangea/dnd (kanban), FullCalendar interaction (calendar)
+- **Calendar**: FullCalendar v6 with React integration
 - **Icons**: Lucide React
 - **Date Handling**: date-fns
 
 ### Key Libraries
 - `@hello-pangea/dnd` - Best drag-and-drop library for kanban boards (React 18 compatible)
-- `react-big-calendar` - Comprehensive calendar with drag-drop scheduling
+- `@fullcalendar/react` - Modern calendar component with excellent drag-drop support
+- `@fullcalendar/daygrid` - Month view plugin for FullCalendar
+- `@fullcalendar/interaction` - Drag-and-drop and external event plugins
+- `@fullcalendar/core` - Core FullCalendar functionality
 - `zustand` - Lightweight state management
 - `prisma` - Type-safe database ORM
 - `next-auth` - Authentication solution
@@ -78,11 +81,12 @@ src/
   - Colors stored in database but not displayed in text
   - Color preservation during text editing
   - Tab key support for indentation
-- **Calendar View**: Advanced scheduling with drag-drop functionality
-  - Unified React-based drag system
-  - Expandable day view for multiple events
-  - Drag to schedule/unschedule tasks
-  - Proper event positioning and layering
+- **Calendar View**: Advanced scheduling with FullCalendar integration
+  - External drag support from unscheduled tasks sidebar
+  - Event drag-and-drop between calendar dates
+  - Drag events back to sidebar to unschedule
+  - Clean event rendering with custom content
+  - Proper visual feedback during drag operations
 
 ### 2. Card Management
 - Create, edit, delete cards with confirmation
@@ -99,13 +103,13 @@ src/
 - Color-coded urgency (red=overdue, yellow=today, green=this week)
 - Drag tasks between cards and calendar
 
-### 4. Calendar Integration
-- **Unified drag system**: Single React-based drag handling
-- **Event positioning**: Fixed layout issues with proper CSS override
-- **Expandable days**: Modal view for days with multiple events
-- **Drag highlights**: Non-layout-affecting visual feedback
-- **Unscheduling**: Drag events back to sidebar to remove dates
-- **Text selection prevention**: No interference during drag operations
+### 4. Calendar Integration (FullCalendar v6)
+- **External Draggable**: Unscheduled tasks can be dragged to calendar dates
+- **Event Positioning**: Clean FullCalendar styling with custom event content
+- **Bidirectional Drag**: Drag events between dates and back to unscheduled sidebar
+- **Visual Feedback**: Sidebar highlighting and proper drag cursors
+- **Text Selection Prevention**: Comprehensive CSS to prevent selection during drag
+- **TypeScript Support**: Proper interfaces for FullCalendar event handlers
 
 ### 5. Settings & Customization
 - Background color customization
@@ -162,20 +166,20 @@ Uses **Zustand** for client-side state with the following structure:
 
 ### Drag and Drop
 - **Kanban**: Uses `@hello-pangea/dnd` for card-to-column operations
-- **Calendar**: Uses HTML5 drag API with React integration
-- **Unified System**: Single drag state management across components
+- **Calendar**: Uses FullCalendar's built-in interaction plugin with external draggable
+- **External Elements**: Initialized with Draggable utility for sidebar tasks
 - **Date Handling**: Flexible parsing of Date objects and strings
-- Proper type definitions for drag events
+- Proper TypeScript interfaces for all drag events
 
-### Calendar Integration
-- **react-big-calendar**: Heavily customized with CSS overrides
-- **Event Positioning**: Custom CSS fixes layout conflicts
-- **Date Format**: Handles both Date objects and ISO strings
-- **Drag System**: Unified React-based approach
-- **Layout Issues**: Extensive CSS overrides for proper event positioning
-- **Z-Index Management**: Complex layering for events, highlights, and controls
-- Tasks without dates shown in sidebar
-- Multiple view modes (month/week/day/agenda)
+### Calendar Integration (FullCalendar)
+- **FullCalendar v6**: Modern calendar library with excellent React integration
+- **Event Rendering**: Custom content rendering with proper styling
+- **External Drag**: Draggable utility manages sidebar-to-calendar operations
+- **CSS Styling**: Clean FullCalendar overrides, much simpler than react-big-calendar
+- **TypeScript Support**: Proper event handler types from @fullcalendar/core
+- **Visual Feedback**: CSS-based hover states and drag highlighting
+- Tasks without dates shown in unscheduled sidebar
+- Month view only (can be extended to week/day views)
 
 ### Text View Format
 ```
@@ -187,12 +191,13 @@ Column Name
         Completed Task ✓
 ```
 
-### Calendar View Specifics
-- **Event Layout**: Fixed react-big-calendar CSS conflicts with custom positioning
-- **Date Numbers**: Positioned absolutely to prevent pushing events down
-- **Drag Highlighting**: Uses pseudo-elements to avoid layout shifts
-- **Event Containers**: Absolutely positioned with proper z-index hierarchy
-- **Multi-Event Days**: Expandable modal for days with >4 events
+### Calendar View Specifics (FullCalendar)
+- **Event Layout**: Clean FullCalendar styling with custom event content rendering
+- **External Drag**: Draggable utility initializes sidebar elements as external events
+- **Event Handlers**: Proper TypeScript interfaces for drop, eventDrop, eventDragStart/Stop
+- **CSS Overrides**: Minimal styling focused on event appearance and drag feedback
+- **Text Selection**: Comprehensive prevention during all drag operations
+- **Responsive Design**: Events scale properly with calendar cells
 
 ### Authentication
 - Demo mode with simplified login (any email/password works)
@@ -219,17 +224,20 @@ NEXTAUTH_SECRET="your-secret-key"
 ### Common Issues
 1. **Drag and drop not working**: 
    - Kanban: Check `@hello-pangea/dnd` imports and DragDropContext wrapper
-   - Calendar: Verify HTML5 drag events and data transfer setup
-2. **Calendar events not showing**: 
-   - Verify date formatting and event structure
+   - Calendar: Verify FullCalendar Draggable utility initialization and external event data
+2. **External drag not working**: 
+   - Check that Draggable utility is properly initialized with correct itemSelector
+   - Verify `data-fc-event` attributes are properly formatted JSON
+   - Ensure sidebar ref is correctly attached to container element
+3. **Calendar events not showing**: 
+   - Verify date formatting and event structure for FullCalendar
    - Check date validation in CalendarView.tsx
    - Ensure dates are properly converted from strings to Date objects
-3. **Calendar layout issues**:
-   - Events pushed to bottom: Check CSS overrides in globals.css
-   - Drag highlight affecting layout: Ensure pseudo-elements are used
-   - Z-index conflicts: Verify event z-index (20+) vs highlights (1)
-4. **Authentication issues**: Check NextAuth configuration and environment variables
-5. **Database errors**: Run `npx prisma generate` and `npx prisma db push`
+4. **Text selection during drag**: 
+   - Verify CSS user-select: none rules are applied
+   - Check that pointer-events: none is set on child elements
+5. **Authentication issues**: Check NextAuth configuration and environment variables
+6. **Database errors**: Run `npx prisma generate` and `npx prisma db push`
 
 ### Build Errors
 - TypeScript errors: Most commonly related to `any` types - prefer specific typing
@@ -276,5 +284,33 @@ NEXTAUTH_SECRET="your-secret-key"
 - Implement proper relations and constraints
 - Consider performance implications of queries
 - Use transactions for complex operations
+
+## Version History
+
+### v1.0 (Current)
+**Major Changes:**
+- **Calendar Migration**: Completely migrated from `react-big-calendar` to `FullCalendar v6`
+  - Better performance and reliability
+  - Cleaner CSS with minimal overrides needed
+  - Proper TypeScript support with official type definitions
+  - Built-in external drag support
+- **External Drag Implementation**: Added `Draggable` utility for sidebar-to-calendar operations
+- **TypeScript Fixes**: Resolved all compilation errors across API routes and components
+- **Enhanced User Experience**: 
+  - Improved visual feedback during drag operations
+  - Comprehensive text selection prevention
+  - Better error handling and type safety
+
+**Migration Notes:**
+- Removed dependencies: `react-big-calendar` and all related libraries
+- Added dependencies: `@fullcalendar/react`, `@fullcalendar/core`, `@fullcalendar/daygrid`, `@fullcalendar/interaction`
+- Updated `CalendarView.tsx` with FullCalendar implementation
+- Simplified `globals.css` by removing complex react-big-calendar overrides
+- Fixed NextAuth user.id access patterns in API routes
+
+**Known Issues in v1.0:**
+- Drag operations work but may not be perfectly smooth in all cases
+- Some minor visual inconsistencies during drag operations
+- Calendar view limited to month view (can be extended)
 
 This CLAUDE.md file should be updated as the project evolves to maintain accurate development context.
