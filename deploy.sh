@@ -87,7 +87,25 @@ cd "$APP_DIR"
 if [ ! -f .env.production ]; then
     print_status "Creating production environment file..."
     NEXTAUTH_SECRET=$(openssl rand -base64 32)
-    sed "s/your-super-secret-key-change-this-in-production/$NEXTAUTH_SECRET/g" .env.production.template > .env.production
+    
+    # Create .env.production with generated secret
+    cat > .env.production << EOF
+# Production Environment Variables
+# PostgreSQL Database
+DATABASE_URL="postgresql://kanban_user:kanban_password@postgres:5432/kanban_db"
+
+# NextAuth Configuration
+NEXTAUTH_URL="http://localhost"
+NEXTAUTH_SECRET="$NEXTAUTH_SECRET"
+
+# Node Environment
+NODE_ENV="production"
+
+# Disable Next.js telemetry
+NEXT_TELEMETRY_DISABLED=1
+EOF
+    
+    print_status "Generated secure NextAuth secret"
 fi
 
 # Stop existing containers if running
