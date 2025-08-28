@@ -55,16 +55,32 @@ print_status "Environment checks passed ✓"
 
 # Create application directory
 APP_DIR="/opt/kanban-app"
-print_status "Creating application directory at $APP_DIR"
+REPO_URL="https://github.com/juan-ms2lab/cardything.git"
+
+print_status "Setting up application directory at $APP_DIR"
 
 if [ ! -d "$APP_DIR" ]; then
     sudo mkdir -p "$APP_DIR"
     sudo chown $USER:$USER "$APP_DIR"
 fi
 
-# Copy application files
-print_status "Copying application files..."
-cp -r . "$APP_DIR/"
+# Check if git is installed
+if ! command -v git &> /dev/null; then
+    print_error "Git is not installed. Please install git first:"
+    echo "sudo apt update && sudo apt install -y git"
+    exit 1
+fi
+
+# Clone or update repository
+if [ ! -d "$APP_DIR/.git" ]; then
+    print_status "Cloning repository from GitHub..."
+    git clone "$REPO_URL" "$APP_DIR"
+else
+    print_status "Repository already exists, pulling latest changes..."
+    cd "$APP_DIR"
+    git pull origin main
+fi
+
 cd "$APP_DIR"
 
 # Generate a random NextAuth secret if not provided

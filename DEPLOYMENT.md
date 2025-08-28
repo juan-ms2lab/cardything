@@ -12,13 +12,26 @@ This guide covers deploying the Kanban Todo App on Ubuntu Server 24.04.3 in a Pr
 
 ## Quick Deploy
 
-1. **Clone the repository** to your server
-2. **Run the deployment script**:
+1. **Run the automated deployment script**:
    ```bash
+   curl -fsSL https://raw.githubusercontent.com/juan-ms2lab/cardything/main/deploy.sh | bash
+   ```
+   
+   **Or manually:**
+   ```bash
+   wget https://raw.githubusercontent.com/juan-ms2lab/cardything/main/deploy.sh
    chmod +x deploy.sh
    ./deploy.sh
    ```
-3. **Access your application** at `http://your-server-ip`
+
+2. **Access your application** at `http://your-server-ip`
+
+The deploy script automatically:
+- Checks system requirements
+- Clones the repository from GitHub
+- Sets up Docker environment
+- Generates secure environment variables
+- Builds and starts all services
 
 ## Manual Setup Instructions
 
@@ -52,12 +65,10 @@ exit
 sudo useradd -m -s /bin/bash kanban
 sudo usermod -aG docker kanban
 
-# Create application directory
+# Clone the repository
 sudo mkdir -p /opt/kanban-app
-sudo chown kanban:kanban /opt/kanban-app
-
-# Copy application files to the server
-# (Upload your project files to /opt/kanban-app)
+sudo chown $USER:$USER /opt/kanban-app
+git clone https://github.com/juan-ms2lab/cardything.git /opt/kanban-app
 
 cd /opt/kanban-app
 ```
