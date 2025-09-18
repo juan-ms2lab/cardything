@@ -66,17 +66,20 @@ export function KanbanBoard() {
       <DragDropContext onDragEnd={handleDragEnd}>
         <div 
           className="flex p-6 min-h-full"
-          style={{ gap: spacingConfig.columnGap }}
+          style={{ 
+            gap: spacingConfig.columnGap,
+            width: `${Math.max(100, board.columns.length * 320 + (board.columns.length - 1) * parseInt(spacingConfig.columnGap) + 320 + 48)}px`
+          }}
         >
           {board.columns
             .sort((a, b) => a.position - b.position)
             .map((column) => (
-              <div key={column.id} className="flex-shrink-0 w-80">
+              <div key={column.id} className="flex-shrink-0 w-80 group">
                 <div 
                   className="bg-gray-100 rounded-lg"
                   style={{ padding: spacingConfig.columnPadding }}
                 >
-                  <h3 className="font-semibold text-gray-900 mb-4">{column.name}</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">{column.name}</h3>
                   
                   <Droppable droppableId={column.id} type="card">
                     {(provided, snapshot) => (
@@ -150,7 +153,7 @@ export function KanbanBoard() {
                   ) : (
                     <button
                       onClick={() => setAddingCardToColumn(column.id)}
-                      className="w-full mt-3 flex items-center justify-center gap-2 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors"
+                      className="w-full mt-1 flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-all hidden group-hover:block"
                     >
                       <Plus className="w-4 h-4" />
                       Add a card
@@ -161,7 +164,7 @@ export function KanbanBoard() {
             ))}
 
           {/* Add Column */}
-          <div className="flex-shrink-0 w-80">
+          <div className="flex-shrink-0 w-80 group">
             {isAddingColumn ? (
               <div className="bg-gray-100 rounded-lg p-4">
                 <input
@@ -201,7 +204,7 @@ export function KanbanBoard() {
             ) : (
               <button
                 onClick={() => setIsAddingColumn(true)}
-                className="w-full bg-gray-200 hover:bg-gray-300 rounded-lg p-4 flex items-center justify-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="w-full bg-gray-100 hover:bg-gray-200 rounded-lg p-4 flex items-center justify-center gap-2 text-gray-500 hover:text-gray-900 transition-all hidden group-hover:block"
               >
                 <Plus className="w-4 h-4" />
                 Add another column

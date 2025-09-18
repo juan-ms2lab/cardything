@@ -103,7 +103,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
 
   return (
     <div 
-      className="bg-white rounded-lg shadow-sm border-l-4 hover:shadow-md transition-shadow"
+      className="bg-white rounded-lg shadow-sm border-l-4 hover:shadow-md transition-shadow group"
       style={{ 
         borderLeftColor: card.color,
         padding: spacingConfig.cardPadding
@@ -312,7 +312,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
       ) : (
         <button
           onClick={() => setIsAddingTask(true)}
-          className="w-full flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded text-sm transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded text-sm transition-all hidden group-hover:block"
         >
           <Plus className="w-3 h-3" />
           Add task
