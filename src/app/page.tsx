@@ -198,7 +198,7 @@ export default function Home() {
               </button>
               
               <button
-                onClick={() => signOut()}
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
               >
                 <LogOut className="w-5 h-5" />

@@ -1,360 +1,206 @@
-# Kanban Todo App - Production Deployment Guide
+# Cardything - Production Deployment Guide
 
-This guide covers deploying the Kanban Todo App on Ubuntu Server 24.04.3 in a Proxmox VM environment.
+This guide covers deploying Cardything on the MS2 Labs infrastructure using **systemd** (native deployment).
 
-## Server Requirements
+## Overview
 
-- **OS**: Ubuntu Server 24.04.3 LTS
-- **RAM**: Minimum 2GB (4GB recommended)
-- **Storage**: Minimum 20GB
-- **CPU**: 2+ cores recommended
-- **Network**: Internet access for package downloads
+Cardything runs natively via systemd (not Docker) for faster iteration and simpler debugging.
 
-## Quick Deploy
+| Item | Value |
+|------|-------|
+| **Live URL** | https://cardything.ms2-lab.com |
+| **Port** | 3011 |
+| **Service** | `cardything.service` |
+| **Database** | PostgreSQL (cardything_prod via Docker) |
+| **Auth** | Autentico (centralized auth service) |
 
-1. **Run the automated deployment script**:
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/juan-ms2lab/cardything/main/deploy.sh | bash
-   ```
-   
-   **Or manually:**
-   ```bash
-   wget https://raw.githubusercontent.com/juan-ms2lab/cardything/main/deploy.sh
-   chmod +x deploy.sh
-   ./deploy.sh
-   ```
+## Prerequisites
 
-2. **Access your application** at `http://your-server-ip`
+- Node.js 18+ installed on host
+- PostgreSQL running (Docker container)
+- Autentico running on port 3041
+- Nginx Proxy Manager routing `cardything.ms2-lab.com` → `127.0.0.1:3011`
 
-The deploy script automatically:
-- Checks system requirements
-- Clones the repository from GitHub
-- Sets up Docker environment
-- Generates secure environment variables
-- Builds and starts all services
+## Deployment Steps
 
-## Manual Setup Instructions
-
-### Step 1: Server Preparation
+### 1. Initial Setup
 
 ```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
+cd /srv/apps/cardything
 
-# Install required packages
-sudo apt install -y curl wget git unzip
+# Install dependencies
+npm ci
 
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
+# Generate Prisma client
+npx prisma generate
 
-# Install Docker Compose
-sudo apt install -y docker-compose
+# Push schema to database
+npx prisma db push
 
-# Add your user to docker group
-sudo usermod -aG docker $USER
+# Build for production (standalone output)
+npm run build
 
-# Log out and back in for group changes to take effect
-exit
+# Copy static assets to standalone directory
+cp -r .next/static .next/standalone/.next/
+cp -r public .next/standalone/
 ```
 
-### Step 2: Application Setup
+### 2. Environment Configuration
 
-```bash
-# Create application user (optional but recommended)
-sudo useradd -m -s /bin/bash kanban
-sudo usermod -aG docker kanban
+Create `/srv/apps/cardything/.env.prod` with:
 
-# Clone the repository
-sudo mkdir -p /opt/kanban-app
-sudo chown $USER:$USER /opt/kanban-app
-git clone https://github.com/juan-ms2lab/cardything.git /opt/kanban-app
+```env
+# Database
+DATABASE_URL=postgresql://postgres:PASSWORD@localhost:5432/cardything_prod
 
-cd /opt/kanban-app
+# NextAuth
+NEXTAUTH_URL=https://cardything.ms2-lab.com
+NEXTAUTH_SECRET=<generate-with-openssl-rand-base64-32>
+
+# Application
+NODE_ENV=production
+NEXT_TELEMETRY_DISABLED=1
+
+# Autentico (centralized auth)
+AUTENTICO_URL=http://localhost:3041
 ```
 
-### Step 3: Environment Configuration
+### 3. Systemd Service
 
-```bash
-# Copy and customize environment file
-cp .env.example .env.production
+The service file is at `/etc/systemd/system/cardything.service`:
 
-# Edit the environment file with your settings
-nano .env.production
+```ini
+[Unit]
+Description=Cardything Kanban App
+After=network.target
+
+[Service]
+Type=simple
+User=apps
+Group=apps
+WorkingDirectory=/srv/apps/cardything/.next/standalone
+EnvironmentFile=/srv/apps/cardything/.env.prod
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=3
+Environment=NODE_ENV=production
+Environment=PORT=3011
+Environment=HOSTNAME=0.0.0.0
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-**Important**: Update the following in `.env.production`:
-- `NEXTAUTH_SECRET`: Generate a secure random string
-- `NEXTAUTH_URL`: Set to your server's IP or domain
-- Database credentials if needed
-
-### Step 4: Deploy Application
+Enable and start:
 
 ```bash
-# Make deploy script executable
-chmod +x deploy.sh
-
-# Run deployment
-./deploy.sh
+sudo systemctl daemon-reload
+sudo systemctl enable cardything
+sudo systemctl start cardything
 ```
 
-### Step 5: Set Up System Service (Optional)
+## Common Operations
+
+### Service Management
 
 ```bash
-# Copy service file
-sudo cp kanban-app.service /etc/systemd/system/
-
-# Enable and start service
-sudo systemctl enable kanban-app.service
-sudo systemctl start kanban-app.service
-
 # Check status
-sudo systemctl status kanban-app.service
-```
-
-## Application Architecture
-
-### Services
-- **Nginx**: Reverse proxy server (Port 80)
-- **Next.js App**: Application server (Internal port 3000)
-- **PostgreSQL**: Database server (Internal port 5432)
-
-### Data Persistence
-- PostgreSQL data: `/var/lib/docker/volumes/kanban-app_postgres_data`
-- Application data: `/var/lib/docker/volumes/kanban-app_app_data`
-
-## Management Commands
-
-### Docker Compose Commands
-```bash
-cd /opt/kanban-app
-
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
+sudo systemctl status cardything
 
 # View logs
-docker-compose logs -f
+sudo journalctl -u cardything -f
 
-# Restart services
-docker-compose restart
+# Restart
+sudo systemctl restart cardything
 
-# Rebuild and restart
-docker-compose up --build -d
+# Stop
+sudo systemctl stop cardything
 ```
 
-### Systemd Service Commands
-```bash
-# Start application
-sudo systemctl start kanban-app
-
-# Stop application
-sudo systemctl stop kanban-app
-
-# Restart application
-sudo systemctl restart kanban-app
-
-# Check status
-sudo systemctl status kanban-app
-
-# View logs
-journalctl -u kanban-app -f
-```
-
-## Database Management
-
-### Backup Database
-```bash
-# Create backup
-docker-compose exec postgres pg_dump -U kanban_user kanban_db > backup.sql
-
-# Or with timestamp
-docker-compose exec postgres pg_dump -U kanban_user kanban_db > backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-### Restore Database
-```bash
-# Restore from backup
-docker-compose exec -T postgres psql -U kanban_user -d kanban_db < backup.sql
-```
-
-### Database Migrations
-```bash
-# Run migrations (if schema changes)
-docker-compose exec app npx prisma migrate deploy
-```
-
-## Monitoring
-
-### Check Application Health
-```bash
-# Test application response
-curl http://localhost/health
-
-# Check container status
-docker-compose ps
-
-# View resource usage
-docker stats
-```
-
-### Log Locations
-- Nginx logs: `/var/lib/docker/volumes/[nginx_container]/var/log/nginx/`
-- Application logs: `docker-compose logs app`
-- Database logs: `docker-compose logs postgres`
-
-## Security Considerations
-
-### Firewall Setup
-```bash
-# Install UFW
-sudo apt install -y ufw
-
-# Allow SSH
-sudo ufw allow 22/tcp
-
-# Allow HTTP
-sudo ufw allow 80/tcp
-
-# Allow HTTPS (if SSL configured)
-sudo ufw allow 443/tcp
-
-# Enable firewall
-sudo ufw enable
-```
-
-### SSL/TLS Setup (Recommended)
-
-For production, set up SSL with Let's Encrypt:
+### Deploy Code Changes
 
 ```bash
-# Install Certbot
-sudo apt install -y certbot python3-certbot-nginx
+cd /srv/apps/cardything
 
-# Get SSL certificate (replace with your domain)
-sudo certbot --nginx -d yourdomain.com
+# Pull latest code (if using git)
+git pull
 
-# Update docker-compose.yml to expose port 443
-# Update nginx.conf for SSL configuration
+# Rebuild
+npm run build
+
+# Copy static assets
+cp -r .next/static .next/standalone/.next/
+cp -r public .next/standalone/
+
+# Restart service
+sudo systemctl restart cardything
 ```
+
+### Database Operations
+
+```bash
+# Connect to database
+docker exec -it postgres psql -U postgres -d cardything_prod
+
+# Push schema changes
+npx prisma db push
+
+# Open Prisma Studio (development)
+npx prisma studio
+```
+
+## Nginx Proxy Manager Configuration
+
+In NPM (port 81), create a proxy host:
+
+- **Domain**: `cardything.ms2-lab.com`
+- **Forward Hostname/IP**: `127.0.0.1`
+- **Forward Port**: `3011`
+- **SSL**: Let's Encrypt
+- **Force SSL**: Yes
+- **Websockets Support**: Yes (for hot-reload if needed)
 
 ## Troubleshooting
 
-### Common Issues
+### Service Won't Start
 
-**Application not accessible:**
 ```bash
-# Check if containers are running
-docker-compose ps
+# Check logs
+sudo journalctl -u cardything --no-pager -n 50
 
-# Check nginx configuration
-docker-compose exec nginx nginx -t
+# Check if port is in use
+lsof -i :3011
 
-# Check application logs
-docker-compose logs app
+# Test manual start
+cd /srv/apps/cardything/.next/standalone
+source /srv/apps/cardything/.env.prod
+NODE_ENV=production PORT=3011 HOSTNAME=0.0.0.0 node server.js
 ```
 
-**Database connection issues:**
+### Database Connection Issues
+
+- Verify PostgreSQL container is running: `docker ps | grep postgres`
+- Check DATABASE_URL uses `localhost` not `postgres` (not in Docker network)
+- Test connection: `psql -h localhost -U postgres -d cardything_prod`
+
+### Authentication Issues
+
+- Verify Autentico is running: `curl http://localhost:3041/health`
+- Check AUTENTICO_URL in .env.prod
+- Ensure NEXTAUTH_URL uses the public domain
+
+## File Locations
+
+| File | Purpose |
+|------|---------|
+| `/srv/apps/cardything/.env.prod` | Production environment variables |
+| `/srv/apps/cardything/.next/standalone/` | Production build output |
+| `/etc/systemd/system/cardything.service` | Systemd service file |
+| `/srv/apps/cardything/start.sh` | Optional start script |
+
+## Backup
+
+Database backup:
 ```bash
-# Check database is running
-docker-compose exec postgres pg_isready -U kanban_user
-
-# Check database logs
-docker-compose logs postgres
-
-# Reset database (WARNING: destroys data)
-docker-compose down -v
-docker-compose up -d
+docker exec postgres pg_dump -U postgres cardything_prod > /srv/backups/postgres/cardything_$(date +%Y%m%d).sql
 ```
-
-**Permission issues:**
-```bash
-# Fix file permissions
-sudo chown -R kanban:kanban /opt/kanban-app
-
-# Fix docker permissions
-sudo usermod -aG docker $USER
-```
-
-### Performance Tuning
-
-**For high-traffic deployments:**
-
-1. **Increase PostgreSQL resources** in `docker-compose.yml`:
-   ```yaml
-   postgres:
-     deploy:
-       resources:
-         limits:
-           memory: 1G
-         reservations:
-           memory: 512M
-   ```
-
-2. **Scale application instances**:
-   ```yaml
-   app:
-     scale: 3
-   ```
-
-3. **Configure Nginx caching** in `nginx.conf`
-
-## Updates and Maintenance
-
-### Update Application
-```bash
-cd /opt/kanban-app
-
-# Pull latest changes
-git pull origin main
-
-# Rebuild and restart
-docker-compose up --build -d
-
-# Run database migrations if needed
-docker-compose exec app npx prisma migrate deploy
-```
-
-### Regular Maintenance
-```bash
-# Clean up old Docker images
-docker system prune -a
-
-# Backup database regularly
-# Set up automated backups with cron
-```
-
-## VM-Specific Considerations
-
-### Proxmox VM Settings
-- Enable QEMU Guest Agent for better integration
-- Configure appropriate resource limits
-- Set up automated backups in Proxmox
-- Consider using cloud-init for initial setup
-
-### Network Configuration
-- Ensure VM has internet access for package downloads
-- Configure static IP if needed
-- Set up port forwarding if behind NAT
-
-## Support
-
-For issues and questions:
-- Check logs first: `docker-compose logs -f`
-- Verify all services are running: `docker-compose ps`
-- Check system resources: `htop` or `docker stats`
-- Review this documentation for common solutions
-
-## Production Checklist
-
-- [ ] Server updated and secured
-- [ ] Docker and Docker Compose installed
-- [ ] Application deployed and accessible
-- [ ] SSL certificate configured (recommended)
-- [ ] Firewall configured
-- [ ] Database backups set up
-- [ ] Monitoring configured
-- [ ] System service enabled for auto-start
-- [ ] Documentation reviewed and customized
