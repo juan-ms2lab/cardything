@@ -7,6 +7,8 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isExistingUser, setIsExistingUser] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
 
@@ -30,7 +32,18 @@ export default function Register() {
         setError(data.error || 'Too many requests. Please try again later.')
       } else if (!response.ok) {
         setError(data.error || 'An error occurred. Please try again.')
+      } else if (data.existingUser && data.canLoginNow) {
+        // Existing verified user - can login immediately
+        setIsExistingUser(true)
+        setSuccessMessage('Your existing Autentico account has been linked to Cardything! You can now sign in.')
+        setIsSuccess(true)
+      } else if (data.existingUser && data.requiresApproval) {
+        // Existing verified user but needs approval
+        setIsExistingUser(true)
+        setSuccessMessage('Your existing Autentico account has been linked. Your access is pending administrator approval.')
+        setIsSuccess(true)
       } else {
+        setSuccessMessage('')
         setIsSuccess(true)
       }
     } catch {
@@ -46,10 +59,10 @@ export default function Register() {
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Check your email
+              {isExistingUser ? 'Account Linked!' : 'Check your email'}
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Verification link sent
+              {isExistingUser ? 'Your account is ready' : 'Verification link sent'}
             </p>
           </div>
 
@@ -61,23 +74,38 @@ export default function Register() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
+                {isExistingUser ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                )}
               </svg>
             </div>
 
             <p className="text-gray-700 text-center mb-6">
-              We&apos;ve sent a verification link to <strong>{email}</strong>.
-              Please check your inbox and click the link to complete your registration.
+              {successMessage || (
+                <>
+                  We&apos;ve sent a verification link to <strong>{email}</strong>.
+                  Please check your inbox and click the link to complete your registration.
+                </>
+              )}
             </p>
 
-            <p className="text-sm text-gray-600 text-center mb-6">
-              The link will expire in 24 hours for security reasons.
-            </p>
+            {!isExistingUser && (
+              <p className="text-sm text-gray-600 text-center mb-6">
+                The link will expire in 24 hours for security reasons.
+              </p>
+            )}
 
             <div className="space-y-3">
               <button
@@ -86,15 +114,19 @@ export default function Register() {
               >
                 Go to Sign In
               </button>
-              <button
-                onClick={() => {
-                  setIsSuccess(false)
-                  setEmail('')
-                }}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-              >
-                Use a different email
-              </button>
+              {!isExistingUser && (
+                <button
+                  onClick={() => {
+                    setIsSuccess(false)
+                    setIsExistingUser(false)
+                    setSuccessMessage('')
+                    setEmail('')
+                  }}
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                >
+                  Use a different email
+                </button>
+              )}
             </div>
           </div>
         </div>

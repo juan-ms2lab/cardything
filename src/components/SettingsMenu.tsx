@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useKanbanStore } from '@/store/kanban'
-import { X, Settings, Download, Trash2, AlertTriangle } from 'lucide-react'
+import { X, Settings, Download, Trash2, AlertTriangle, Key, Check } from 'lucide-react'
 
 interface SettingsMenuProps {
   isOpen: boolean
@@ -13,6 +13,13 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
   const { settings, setSettings, board, setBoard, syncSettings, syncBoard } = useKanbanStore()
   const [localSettings, setLocalSettings] = useState(settings)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   // Update localSettings when settings change
   useEffect(() => {
@@ -82,6 +89,56 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
     await syncBoard()
     setShowClearConfirm(false)
     onClose()
+  }
+
+  const handleChangePassword = async () => {
+    setPasswordError('')
+    setPasswordSuccess(false)
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('All fields are required')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setPasswordError(data.error || 'Failed to change password')
+        return
+      }
+
+      setPasswordSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => {
+        setShowChangePassword(false)
+        setPasswordSuccess(false)
+      }, 2000)
+    } catch {
+      setPasswordError('An error occurred. Please try again.')
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   return (
@@ -343,6 +400,97 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Change Password */}
+          <div className="border-t pt-6">
+            <h3 className="font-medium text-gray-900 mb-2">Account Security</h3>
+
+            {!showChangePassword ? (
+              <button
+                onClick={() => setShowChangePassword(true)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                <Key className="w-4 h-4" />
+                Change Password
+              </button>
+            ) : (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                {passwordSuccess ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <Check className="w-5 h-5" />
+                    <span className="font-medium">Password changed successfully!</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Current Password
+                        </label>
+                        <input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Enter current password"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          New Password
+                        </label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Enter new password (min 8 characters)"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Confirm New Password
+                        </label>
+                        <input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Confirm new password"
+                        />
+                      </div>
+                    </div>
+                    {passwordError && (
+                      <div className="mb-3 text-sm text-red-600 bg-red-50 p-2 rounded">
+                        {passwordError}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleChangePassword}
+                        disabled={isChangingPassword}
+                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {isChangingPassword ? 'Changing...' : 'Change Password'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowChangePassword(false)
+                          setCurrentPassword('')
+                          setNewPassword('')
+                          setConfirmPassword('')
+                          setPasswordError('')
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

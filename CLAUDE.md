@@ -1,14 +1,14 @@
 # Cardything
 
-> See `/srv/CLAUDE.md` for infrastructure docs. Use Autentico for auth, PostgreSQL for database.
+> **Infrastructure**: See `/srv/CLAUDE.md` | **Ports**: See `/srv/gui_access_urls.md`
 
 Kanban board app with multiple views (kanban, text, calendar).
 
 - **URL**: https://cardything.ms2-lab.com
 - **Port**: 3011
-- **Service**: `cardything.service` (systemd)
+- **Service**: `cardything.service`
 - **Database**: PostgreSQL (cardything_prod)
-- **Auth**: Autentico (localhost:3041)
+- **Auth**: Autentico (SIMPLE mode)
 
 ## Commands
 
@@ -75,9 +75,13 @@ DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5432/cardything_prod"
 NEXTAUTH_URL="https://cardything.ms2-lab.com"
 NEXTAUTH_SECRET="generated-secret"
 AUTENTICO_URL="http://localhost:3041"
+AUTENTICO_APP_ID="cardything"
 ```
 
 ## Database Models
 
-- User, Board, Column, Card, Task, UserSettings
-- All via Prisma with PostgreSQL
+User, Board, Column, Card, Task, UserSettings (all via Prisma)
+
+## TODO
+
+- [ ] Add ability to rename/edit columns (currently can only add new columns)
