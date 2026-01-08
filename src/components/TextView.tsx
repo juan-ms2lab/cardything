@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 
 export function TextView() {
-  const { board, setBoard } = useKanbanStore()
+  const { board, setBoard, syncBoard } = useKanbanStore()
   const [textContent, setTextContent] = useState('')
 
   const generateTextFromBoard = useCallback(() => {
@@ -160,6 +160,8 @@ export function TextView() {
     }
 
     setBoard(updatedBoard)
+    // Sync changes to database
+    setTimeout(() => syncBoard(), 0)
   }
 
   if (!board) {

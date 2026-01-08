@@ -3,17 +3,19 @@
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useKanbanStore } from '@/store/kanban'
 import { KanbanCard } from './KanbanCard'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { getSpacingConfig } from '@/utils/spacing'
 
 export function KanbanBoard() {
-  const { board, moveCard, addCard, addColumn, settings } = useKanbanStore()
+  const { board, moveCard, addCard, addColumn, updateColumn, deleteColumn, settings } = useKanbanStore()
   const spacingConfig = getSpacingConfig(settings?.spacingLevel)
   const [newCardName, setNewCardName] = useState('')
   const [addingCardToColumn, setAddingCardToColumn] = useState<string | null>(null)
   const [newColumnName, setNewColumnName] = useState('')
   const [isAddingColumn, setIsAddingColumn] = useState(false)
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
+  const [editingColumnName, setEditingColumnName] = useState('')
 
   if (!board) {
     return <div className="flex items-center justify-center h-64 text-gray-500">No board loaded</div>
@@ -61,6 +63,33 @@ export function KanbanBoard() {
     }
   }
 
+  const handleEditColumn = (columnId: string, currentName: string) => {
+    setEditingColumnId(columnId)
+    setEditingColumnName(currentName)
+  }
+
+  const handleSaveColumnName = (columnId: string) => {
+    if (editingColumnName.trim()) {
+      updateColumn(columnId, { name: editingColumnName.trim() })
+    }
+    setEditingColumnId(null)
+    setEditingColumnName('')
+  }
+
+  const handleDeleteColumn = (columnId: string) => {
+    const column = board.columns.find(c => c.id === columnId)
+    if (!column) return
+
+    if (column.cards.length > 0) {
+      alert('Cannot delete column: Please remove all cards first')
+      return
+    }
+
+    if (confirm(`Delete column "${column.name}"?`)) {
+      deleteColumn(columnId)
+    }
+  }
+
   return (
     <div className="h-full overflow-x-auto">
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -75,11 +104,67 @@ export function KanbanBoard() {
             .sort((a, b) => a.position - b.position)
             .map((column) => (
               <div key={column.id} className="flex-shrink-0 w-80 group">
-                <div 
+                <div
                   className="bg-gray-100 rounded-lg"
                   style={{ padding: spacingConfig.columnPadding }}
                 >
-                  <h3 className="font-semibold text-gray-900 mb-2">{column.name}</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    {editingColumnId === column.id ? (
+                      <div className="flex items-center gap-1 flex-1">
+                        <input
+                          type="text"
+                          value={editingColumnName}
+                          onChange={(e) => setEditingColumnName(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveColumnName(column.id)
+                            if (e.key === 'Escape') {
+                              setEditingColumnId(null)
+                              setEditingColumnName('')
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleSaveColumnName(column.id)}
+                          className="p-1 text-green-600 hover:bg-green-100 rounded"
+                          title="Save"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingColumnId(null)
+                            setEditingColumnName('')
+                          }}
+                          className="p-1 text-gray-500 hover:bg-gray-200 rounded"
+                          title="Cancel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="font-semibold text-gray-900">{column.name}</h3>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEditColumn(column.id, column.name)}
+                            className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded"
+                            title="Edit column name"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteColumn(column.id)}
+                            className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded"
+                            title="Delete column"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   
                   <Droppable droppableId={column.id} type="card">
                     {(provided, snapshot) => (
@@ -153,7 +238,7 @@ export function KanbanBoard() {
                   ) : (
                     <button
                       onClick={() => setAddingCardToColumn(column.id)}
-                      className="w-full mt-1 flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-all hidden group-hover:block"
+                      className="w-full mt-1 flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-all sm:flex hidden group-hover:flex"
                     >
                       <Plus className="w-4 h-4" />
                       Add a card
@@ -204,7 +289,7 @@ export function KanbanBoard() {
             ) : (
               <button
                 onClick={() => setIsAddingColumn(true)}
-                className="w-full bg-gray-100 hover:bg-gray-200 rounded-lg p-4 flex items-center justify-center gap-2 text-gray-500 hover:text-gray-900 transition-all hidden group-hover:block"
+                className="w-full bg-gray-100 hover:bg-gray-200 rounded-lg p-4 flex items-center justify-center gap-2 text-gray-500 hover:text-gray-900 transition-all sm:flex hidden group-hover:flex"
               >
                 <Plus className="w-4 h-4" />
                 Add another column

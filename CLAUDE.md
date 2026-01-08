@@ -84,4 +84,6 @@ User, Board, Column, Card, Task, UserSettings (all via Prisma)
 
 ## TODO
 
-- [ ] Add ability to rename/edit columns (currently can only add new columns)
+- [x] Add ability to rename/edit columns (currently can only add new columns)
+- [x] Add ability to delete columns (with empty check)
+- [x] Fix mobile/tablet UI (hover-only elements now visible)

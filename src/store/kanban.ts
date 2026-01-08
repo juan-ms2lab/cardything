@@ -173,13 +173,13 @@ export const useKanbanStore = create<KanbanState>()(
       },
       
       moveCard: (cardId, targetColumnId, newPosition) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         // Find the card to move
         let cardToMove: Card | null = null
         let sourceColumnId = ''
-        
+
         for (const column of board.columns) {
           const card = column.cards.find(c => c.id === cardId)
           if (card) {
@@ -188,9 +188,9 @@ export const useKanbanStore = create<KanbanState>()(
             break
           }
         }
-        
+
         if (!cardToMove) return
-        
+
         const updatedBoard = {
           ...board,
           columns: board.columns.map(col => {
@@ -215,14 +215,15 @@ export const useKanbanStore = create<KanbanState>()(
             return col
           })
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       deleteCard: (cardId) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         const updatedBoard = {
           ...board,
           columns: board.columns.map(col => ({
@@ -232,8 +233,9 @@ export const useKanbanStore = create<KanbanState>()(
               .map((c, index) => ({ ...c, position: index }))
           }))
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       addTask: (cardId, name, dueDate) => {
@@ -293,13 +295,13 @@ export const useKanbanStore = create<KanbanState>()(
       },
       
       moveTask: (taskId, targetCardId, newPosition) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         // Find the task to move
         let taskToMove: Task | null = null
         let sourceCardId = ''
-        
+
         for (const column of board.columns) {
           for (const card of column.cards) {
             const task = card.tasks.find(t => t.id === taskId)
@@ -311,9 +313,9 @@ export const useKanbanStore = create<KanbanState>()(
           }
           if (taskToMove) break
         }
-        
+
         if (!taskToMove) return
-        
+
         const updatedBoard = {
           ...board,
           columns: board.columns.map(col => ({
@@ -341,14 +343,15 @@ export const useKanbanStore = create<KanbanState>()(
             })
           }))
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       deleteTask: (taskId) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         const updatedBoard = {
           ...board,
           columns: board.columns.map(col => ({
@@ -361,14 +364,15 @@ export const useKanbanStore = create<KanbanState>()(
             }))
           }))
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       addColumn: (name) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         const newColumn: Column = {
           id: `column-${Date.now()}`,
           name,
@@ -376,59 +380,63 @@ export const useKanbanStore = create<KanbanState>()(
           boardId: board.id,
           cards: []
         }
-        
+
         const updatedBoard = {
           ...board,
           columns: [...board.columns, newColumn]
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       updateColumn: (columnId, updates) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         const updatedBoard = {
           ...board,
-          columns: board.columns.map(col => 
+          columns: board.columns.map(col =>
             col.id === columnId ? { ...col, ...updates } : col
           )
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       moveColumn: (columnId, newPosition) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         const columnToMove = board.columns.find(c => c.id === columnId)
         if (!columnToMove) return
-        
+
         const otherColumns = board.columns.filter(c => c.id !== columnId)
         otherColumns.splice(newPosition, 0, columnToMove)
-        
+
         const updatedBoard = {
           ...board,
           columns: otherColumns.map((col, index) => ({ ...col, position: index }))
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       },
       
       deleteColumn: (columnId) => {
-        const { board } = get()
+        const { board, syncBoard } = get()
         if (!board) return
-        
+
         const updatedBoard = {
           ...board,
           columns: board.columns
             .filter(c => c.id !== columnId)
             .map((col, index) => ({ ...col, position: index }))
         }
-        
+
         set({ board: updatedBoard })
+        syncBoard()
       }
     }),
     { name: 'kanban-store' }

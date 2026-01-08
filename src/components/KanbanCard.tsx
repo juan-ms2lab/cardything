@@ -252,7 +252,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
                 
                 <button
                   onClick={() => deleteTask(task.id)}
-                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                  className="flex-shrink-0 sm:opacity-100 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -312,7 +312,7 @@ export function KanbanCard({ card }: KanbanCardProps) {
       ) : (
         <button
           onClick={() => setIsAddingTask(true)}
-          className="w-full flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded text-sm transition-all hidden group-hover:block"
+          className="w-full flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded text-sm transition-all sm:flex hidden group-hover:flex"
         >
           <Plus className="w-3 h-3" />
           Add task
