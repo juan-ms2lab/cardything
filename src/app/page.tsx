@@ -166,7 +166,7 @@ export default function Home() {
                     }`}
                     title="Reset to 100%"
                   >
-                    100%
+                    1:1
                   </button>
                   <button
                     onClick={() => {
