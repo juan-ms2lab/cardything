@@ -158,14 +158,25 @@ export default function Home() {
                   </button>
                   <div className="w-px h-4 bg-gray-300 mx-1" />
                   <button
+                    onClick={() => setZoomLevel(100)}
+                    className={`px-1.5 py-1 text-xs rounded transition-colors ${
+                      zoomLevel === 100
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                    }`}
+                    title="Reset to 100%"
+                  >
+                    100%
+                  </button>
+                  <button
                     onClick={() => {
                       if (!board) return
                       // Calculate zoom to fit all columns
                       // Each column is 320px wide + gap (default ~16px)
-                      const columnCount = board.columns.length + 1 // +1 for add column button
+                      const columnCount = board.columns.length
                       const columnWidth = 320
                       const gap = 16
-                      const padding = 48 // p-6 on each side
+                      const padding = 80 // p-6 on each side + add button
                       const totalWidth = columnCount * columnWidth + (columnCount - 1) * gap + padding
                       const viewportWidth = window.innerWidth
                       const fitZoom = Math.floor((viewportWidth / totalWidth) * 100)
