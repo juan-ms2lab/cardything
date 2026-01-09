@@ -52,12 +52,14 @@ interface KanbanState {
   settings: UserSettings | null
   currentView: 'kanban' | 'text' | 'calendar'
   zoomLevel: number
-  
+  hideCompletedTasks: boolean
+
   // Actions
   setBoard: (board: Board) => void
   setSettings: (settings: UserSettings) => void
   setCurrentView: (view: 'kanban' | 'text' | 'calendar') => void
   setZoomLevel: (zoom: number) => void
+  setHideCompletedTasks: (hide: boolean) => void
   syncBoard: () => Promise<void>
   syncSettings: () => Promise<void>
   
@@ -87,11 +89,13 @@ export const useKanbanStore = create<KanbanState>()(
       settings: null,
       currentView: 'kanban',
       zoomLevel: 100,
-      
+      hideCompletedTasks: false,
+
       setBoard: (board) => set({ board }),
       setSettings: (settings) => set({ settings }),
       setCurrentView: (view) => set({ currentView: view }),
       setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
+      setHideCompletedTasks: (hide) => set({ hideCompletedTasks: hide }),
       
       syncBoard: async () => {
         const { board } = get()
@@ -194,6 +198,23 @@ export const useKanbanStore = create<KanbanState>()(
         const updatedBoard = {
           ...board,
           columns: board.columns.map(col => {
+            // Handle same-column reordering
+            if (col.id === sourceColumnId && sourceColumnId === targetColumnId) {
+              const cards = [...col.cards]
+              const currentIndex = cards.findIndex(c => c.id === cardId)
+              if (currentIndex === -1) return col
+
+              // Remove from current position
+              const [movedCard] = cards.splice(currentIndex, 1)
+              // Insert at new position
+              cards.splice(newPosition, 0, movedCard)
+
+              return {
+                ...col,
+                cards: cards.map((c, index) => ({ ...c, position: index }))
+              }
+            }
+
             if (col.id === sourceColumnId) {
               // Remove card from source column
               return {
@@ -202,7 +223,9 @@ export const useKanbanStore = create<KanbanState>()(
                   .filter(c => c.id !== cardId)
                   .map((c, index) => ({ ...c, position: index }))
               }
-            } else if (col.id === targetColumnId) {
+            }
+
+            if (col.id === targetColumnId) {
               // Add card to target column
               const updatedCard = { ...cardToMove!, columnId: targetColumnId }
               const newCards = [...col.cards]

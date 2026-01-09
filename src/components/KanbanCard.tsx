@@ -11,7 +11,7 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ card }: KanbanCardProps) {
-  const { updateCard, deleteCard, addTask, updateTask, deleteTask, settings } = useKanbanStore()
+  const { updateCard, deleteCard, addTask, updateTask, deleteTask, settings, hideCompletedTasks } = useKanbanStore()
   const spacingConfig = getSpacingConfig(settings?.spacingLevel)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState(card.name)
@@ -185,11 +185,12 @@ export function KanbanCard({ card }: KanbanCardProps) {
 
 
       {/* Tasks */}
-      <div 
+      <div
         className="mb-3 flex flex-col"
         style={{ gap: spacingConfig.taskGap }}
       >
         {card.tasks
+          .filter(task => !hideCompletedTasks || !task.completed)
           .sort((a, b) => a.position - b.position)
           .map((task) => {
             const dateColor = getTaskDateColor(task.dueDate)

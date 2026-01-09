@@ -108,62 +108,65 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 })
     }
 
-    // Delete all existing data and recreate
-    await prisma.task.deleteMany({
-      where: {
-        card: {
+    // Use transaction to ensure atomic update
+    await prisma.$transaction(async (tx) => {
+      // Delete all existing data and recreate
+      await tx.task.deleteMany({
+        where: {
+          card: {
+            column: {
+              boardId: existingBoard.id
+            }
+          }
+        }
+      })
+
+      await tx.card.deleteMany({
+        where: {
           column: {
             boardId: existingBoard.id
           }
         }
-      }
-    })
-
-    await prisma.card.deleteMany({
-      where: {
-        column: {
-          boardId: existingBoard.id
-        }
-      }
-    })
-
-    await prisma.column.deleteMany({
-      where: { boardId: existingBoard.id }
-    })
-
-    // Create new columns, cards, and tasks
-    for (const column of board.columns) {
-      const createdColumn = await prisma.column.create({
-        data: {
-          name: column.name,
-          position: column.position,
-          boardId: existingBoard.id
-        }
       })
 
-      for (const card of column.cards) {
-        const createdCard = await prisma.card.create({
+      await tx.column.deleteMany({
+        where: { boardId: existingBoard.id }
+      })
+
+      // Create new columns, cards, and tasks
+      for (const column of board.columns) {
+        const createdColumn = await tx.column.create({
           data: {
-            name: card.name,
-            color: card.color,
-            position: card.position,
-            columnId: createdColumn.id
+            name: column.name,
+            position: column.position,
+            boardId: existingBoard.id
           }
         })
 
-        for (const task of card.tasks) {
-          await prisma.task.create({
+        for (const card of column.cards) {
+          const createdCard = await tx.card.create({
             data: {
-              name: task.name,
-              completed: task.completed,
-              dueDate: task.dueDate ? new Date(task.dueDate) : null,
-              position: task.position,
-              cardId: createdCard.id
+              name: card.name,
+              color: card.color,
+              position: card.position,
+              columnId: createdColumn.id
             }
           })
+
+          for (const task of card.tasks) {
+            await tx.task.create({
+              data: {
+                name: task.name,
+                completed: task.completed,
+                dueDate: task.dueDate ? new Date(task.dueDate) : null,
+                position: task.position,
+                cardId: createdCard.id
+              }
+            })
+          }
         }
       }
-    }
+    })
 
     // Fetch the updated board
     const updatedBoard = await prisma.board.findFirst({

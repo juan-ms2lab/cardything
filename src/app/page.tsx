@@ -8,26 +8,30 @@ import { KanbanBoard } from '@/components/KanbanBoard'
 import { TextView } from '@/components/TextView'
 import { CalendarView } from '@/components/CalendarView'
 import { SettingsMenu } from '@/components/SettingsMenu'
-import { 
-  LayoutGrid, 
-  FileText, 
-  Calendar, 
-  Settings, 
+import {
+  LayoutGrid,
+  FileText,
+  Calendar,
+  Settings,
   LogOut,
-  User
+  User,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 
 export default function Home() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const { 
-    currentView, 
-    setCurrentView, 
-    setBoard, 
+  const {
+    currentView,
+    setCurrentView,
+    setBoard,
     setSettings,
     settings,
     zoomLevel,
-    setZoomLevel
+    setZoomLevel,
+    hideCompletedTasks,
+    setHideCompletedTasks
   } = useKanbanStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
@@ -180,6 +184,26 @@ export default function Home() {
                   />
                   <span className="text-xs text-gray-600 min-w-[3rem]">{zoomLevel}%</span>
                 </div>
+              )}
+
+              {/* Hide Completed Toggle - for kanban view only */}
+              {currentView === 'kanban' && (
+                <button
+                  onClick={() => setHideCompletedTasks(!hideCompletedTasks)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+                    hideCompletedTasks
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title={hideCompletedTasks ? 'Show completed tasks' : 'Hide completed tasks'}
+                >
+                  {hideCompletedTasks ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                  <span>{hideCompletedTasks ? 'Hidden' : 'Completed'}</span>
+                </button>
               )}
             </div>
 
