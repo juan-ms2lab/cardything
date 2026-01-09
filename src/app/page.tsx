@@ -16,7 +16,10 @@ import {
   LogOut,
   User,
   Eye,
-  EyeOff
+  EyeOff,
+  ZoomIn,
+  ZoomOut,
+  Maximize2
 } from 'lucide-react'
 
 export default function Home() {
@@ -25,6 +28,7 @@ export default function Home() {
   const {
     currentView,
     setCurrentView,
+    board,
     setBoard,
     setSettings,
     settings,
@@ -133,56 +137,45 @@ export default function Home() {
             </div>
 
             {/* Contextual Controls - only show for relevant views */}
-            <div className="flex items-center gap-4">
-              {/* Spacing Control - only for kanban view */}
-              {currentView === 'kanban' && settings && (
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                  <span className="text-xs text-gray-600">Spacing:</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={settings.spacingLevel}
-                    onChange={async (e) => {
-                      const newSettings = {
-                        ...settings,
-                        spacingLevel: parseInt(e.target.value)
-                      }
-                      setSettings(newSettings)
-                      
-                      // Save to database in real-time
-                      try {
-                        await fetch('/api/settings', {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(newSettings)
-                        })
-                      } catch (error) {
-                        console.error('Failed to save settings:', error)
-                      }
-                    }}
-                    className="w-16 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer slider-mini"
-                  />
-                  <span className="text-xs text-gray-600 min-w-[2rem]">{settings.spacingLevel}%</span>
-                </div>
-              )}
-
-              {/* Zoom Control - for kanban view only */}
+            <div className="flex items-center gap-3">
+              {/* Zoom Controls - for kanban view only */}
               {currentView === 'kanban' && (
-                <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
-                  <span className="text-xs text-gray-600">Zoom:</span>
-                  <input
-                    type="range"
-                    min="50"
-                    max="150"
-                    step="25"
-                    value={zoomLevel}
-                    onChange={(e) => {
-                      setZoomLevel(parseInt(e.target.value))
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setZoomLevel(Math.max(25, zoomLevel - 5))}
+                    className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                    title="Zoom out (−5%)"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-gray-600 min-w-[3rem] text-center">{zoomLevel}%</span>
+                  <button
+                    onClick={() => setZoomLevel(Math.min(200, zoomLevel + 5))}
+                    className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                    title="Zoom in (+5%)"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 mx-1" />
+                  <button
+                    onClick={() => {
+                      if (!board) return
+                      // Calculate zoom to fit all columns
+                      // Each column is 320px wide + gap (default ~16px)
+                      const columnCount = board.columns.length + 1 // +1 for add column button
+                      const columnWidth = 320
+                      const gap = 16
+                      const padding = 48 // p-6 on each side
+                      const totalWidth = columnCount * columnWidth + (columnCount - 1) * gap + padding
+                      const viewportWidth = window.innerWidth
+                      const fitZoom = Math.floor((viewportWidth / totalWidth) * 100)
+                      setZoomLevel(Math.max(25, Math.min(200, fitZoom)))
                     }}
-                    className="w-16 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer slider-mini"
-                  />
-                  <span className="text-xs text-gray-600 min-w-[3rem]">{zoomLevel}%</span>
+                    className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded transition-colors"
+                    title="Fit to width"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
                 </div>
               )}
 
