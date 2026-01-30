@@ -7,11 +7,13 @@ import { useKanbanStore } from '@/store/kanban'
 import { KanbanBoard } from '@/components/KanbanBoard'
 import { TextView } from '@/components/TextView'
 import { CalendarView } from '@/components/CalendarView'
+import { MindMapView } from '@/components/MindMapView'
 import { SettingsMenu } from '@/components/SettingsMenu'
 import {
   LayoutGrid,
   FileText,
   Calendar,
+  GitBranch,
   Settings,
   LogOut,
   User,
@@ -100,7 +102,8 @@ export default function Home() {
   const viewButtons = [
     { id: 'kanban', label: 'Board', icon: LayoutGrid },
     { id: 'text', label: 'Text', icon: FileText },
-    { id: 'calendar', label: 'Calendar', icon: Calendar }
+    { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'mindmap', label: 'Map', icon: GitBranch }
   ] as const
 
   return (
@@ -122,7 +125,7 @@ export default function Home() {
                 {viewButtons.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
-                    onClick={() => setCurrentView(id as 'kanban' | 'text' | 'calendar')}
+                    onClick={() => setCurrentView(id as 'kanban' | 'text' | 'calendar' | 'mindmap')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       currentView === id
                         ? 'bg-white text-blue-600 shadow-sm'
@@ -240,17 +243,18 @@ export default function Home() {
       <main className="flex-1 overflow-auto">
         <div
           className="h-full min-h-full"
-          style={{ 
-            transform: currentView !== 'text' ? `scale(${zoomLevel / 100})` : undefined,
+          style={{
+            transform: currentView === 'kanban' || currentView === 'calendar' ? `scale(${zoomLevel / 100})` : undefined,
             transformOrigin: 'top left',
-            width: currentView !== 'text' ? `${100 / (zoomLevel / 100)}%` : '100%',
-            height: currentView !== 'text' ? `${100 / (zoomLevel / 100)}%` : '100%',
-            minHeight: currentView !== 'text' ? `${100 / (zoomLevel / 100)}vh` : 'auto'
+            width: currentView === 'kanban' || currentView === 'calendar' ? `${100 / (zoomLevel / 100)}%` : '100%',
+            height: currentView === 'kanban' || currentView === 'calendar' ? `${100 / (zoomLevel / 100)}%` : '100%',
+            minHeight: currentView === 'kanban' || currentView === 'calendar' ? `${100 / (zoomLevel / 100)}vh` : 'auto'
           }}
         >
           {currentView === 'kanban' && <KanbanBoard />}
           {currentView === 'text' && <TextView />}
           {currentView === 'calendar' && <CalendarView />}
+          {currentView === 'mindmap' && <MindMapView />}
         </div>
       </main>
 

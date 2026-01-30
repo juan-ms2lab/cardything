@@ -50,16 +50,20 @@ export interface UserSettings {
 interface KanbanState {
   board: Board | null
   settings: UserSettings | null
-  currentView: 'kanban' | 'text' | 'calendar'
+  currentView: 'kanban' | 'text' | 'calendar' | 'mindmap'
   zoomLevel: number
   hideCompletedTasks: boolean
+  collapsedNodes: Set<string>
 
   // Actions
   setBoard: (board: Board) => void
   setSettings: (settings: UserSettings) => void
-  setCurrentView: (view: 'kanban' | 'text' | 'calendar') => void
+  setCurrentView: (view: 'kanban' | 'text' | 'calendar' | 'mindmap') => void
   setZoomLevel: (zoom: number) => void
   setHideCompletedTasks: (hide: boolean) => void
+  toggleNodeCollapsed: (nodeId: string) => void
+  expandAllNodes: () => void
+  collapseAllNodes: () => void
   syncBoard: () => Promise<void>
   syncSettings: () => Promise<void>
   
@@ -90,12 +94,34 @@ export const useKanbanStore = create<KanbanState>()(
       currentView: 'kanban',
       zoomLevel: 100,
       hideCompletedTasks: false,
+      collapsedNodes: new Set<string>(),
 
       setBoard: (board) => set({ board }),
       setSettings: (settings) => set({ settings }),
       setCurrentView: (view) => set({ currentView: view }),
       setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
       setHideCompletedTasks: (hide) => set({ hideCompletedTasks: hide }),
+      toggleNodeCollapsed: (nodeId) => set((state) => {
+        const newCollapsed = new Set(state.collapsedNodes)
+        if (newCollapsed.has(nodeId)) {
+          newCollapsed.delete(nodeId)
+        } else {
+          newCollapsed.add(nodeId)
+        }
+        return { collapsedNodes: newCollapsed }
+      }),
+      expandAllNodes: () => set({ collapsedNodes: new Set<string>() }),
+      collapseAllNodes: () => set((state) => {
+        if (!state.board) return { collapsedNodes: new Set<string>() }
+        const allNodeIds = new Set<string>()
+        state.board.columns.forEach(col => {
+          allNodeIds.add(`column-${col.id}`)
+          col.cards.forEach(card => {
+            allNodeIds.add(`card-${card.id}`)
+          })
+        })
+        return { collapsedNodes: allNodeIds }
+      }),
       
       syncBoard: async () => {
         const { board } = get()
