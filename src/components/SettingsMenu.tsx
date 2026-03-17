@@ -1,8 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useKanbanStore } from '@/store/kanban'
-import { X, Settings, Download, Trash2, AlertTriangle, Key, Check } from 'lucide-react'
+import { X, Settings, Download, Trash2, AlertTriangle, Key, Check, Plus, Copy, Eye, EyeOff } from 'lucide-react'
+
+interface ApiKeyEntry {
+  id: string
+  name: string
+  key: string
+  lastUsed: string | null
+  createdAt: string
+}
 
 interface SettingsMenuProps {
   isOpen: boolean
@@ -20,6 +28,51 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([])
+  const [newKeyName, setNewKeyName] = useState('')
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null)
+  const [showApiKeys, setShowApiKeys] = useState(false)
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null)
+
+  const fetchApiKeys = useCallback(async () => {
+    try {
+      const res = await fetch('/api/keys')
+      if (res.ok) setApiKeys(await res.json())
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && showApiKeys) fetchApiKeys()
+  }, [isOpen, showApiKeys, fetchApiKeys])
+
+  const handleCreateKey = async () => {
+    const res = await fetch('/api/keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newKeyName || 'Default' })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setNewlyCreatedKey(data.key)
+      setNewKeyName('')
+      fetchApiKeys()
+    }
+  }
+
+  const handleDeleteKey = async (id: string) => {
+    const res = await fetch('/api/keys', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    })
+    if (res.ok) fetchApiKeys()
+  }
+
+  const handleCopyKey = (key: string, id: string) => {
+    navigator.clipboard.writeText(key)
+    setCopiedKeyId(id)
+    setTimeout(() => setCopiedKeyId(null), 2000)
+  }
 
   // Update localSettings when settings change
   useEffect(() => {
@@ -427,6 +480,111 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* API Keys Section */}
+          <div className="mt-6 pt-4 border-t">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-medium text-gray-900">API Access</h3>
+              <button
+                onClick={() => setShowApiKeys(!showApiKeys)}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+              >
+                {showApiKeys ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showApiKeys ? 'Hide' : 'Manage Keys'}
+              </button>
+            </div>
+
+            {showApiKeys && (
+              <div className="space-y-3">
+                {/* Create new key */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    placeholder="Key name (optional)"
+                    className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={handleCreateKey}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create
+                  </button>
+                </div>
+
+                {/* Newly created key (shown once) */}
+                {newlyCreatedKey && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded">
+                    <p className="text-xs font-medium text-green-800 mb-1">New API key created. Copy it now - it won&apos;t be shown again.</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs bg-white p-2 rounded border font-mono break-all">{newlyCreatedKey}</code>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(newlyCreatedKey); }}
+                        className="p-1.5 text-green-700 hover:bg-green-100 rounded"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setNewlyCreatedKey(null)}
+                      className="mt-2 text-xs text-green-700 hover:text-green-900"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
+                {/* Existing keys */}
+                {apiKeys.length === 0 ? (
+                  <p className="text-sm text-gray-500">No API keys yet. Create one to access your board via the API.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {apiKeys.map((k) => (
+                      <div key={k.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-800">{k.name}</span>
+                            <code className="text-xs text-gray-500 font-mono">{k.key}</code>
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Created {new Date(k.createdAt).toLocaleDateString()}
+                            {k.lastUsed && ` · Last used ${new Date(k.lastUsed).toLocaleDateString()}`}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleCopyKey(k.key, k.id)}
+                          className="p-1 text-gray-400 hover:text-gray-600"
+                          title="Copy masked key"
+                        >
+                          {copiedKeyId === k.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteKey(k.id)}
+                          className="p-1 text-red-400 hover:text-red-600"
+                          title="Revoke key"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* API Documentation hint */}
+                <div className="p-2 bg-blue-50 rounded text-xs text-blue-800">
+                  <p className="font-medium mb-1">API Endpoints (use Bearer token or X-API-Key header):</p>
+                  <code className="block">GET /api/v1/board</code>
+                  <code className="block">GET/POST /api/v1/columns</code>
+                  <code className="block">GET/POST /api/v1/cards</code>
+                  <code className="block">GET/POST /api/v1/tasks</code>
+                  <code className="block">PUT/DELETE /api/v1/tasks/:id</code>
+                  <code className="block">POST /api/v1/tasks/:id/move</code>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -81,7 +81,44 @@ AUTENTICO_APP_ID="cardything"
 
 ## Database Models
 
-User, Board, Column, Card, Task, UserSettings (all via Prisma)
+User, Board, Column, Card, Task, UserSettings, ApiKey (all via Prisma)
+
+## API Access
+
+Per-user API key authentication. Keys are managed in Settings > API Access.
+
+### Authentication
+- `Authorization: Bearer cdy_...` header
+- `X-API-Key: cdy_...` header
+
+### Endpoints (`/api/v1/`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /board | Full board with columns/cards/tasks |
+| GET | /columns | List columns with cards/tasks |
+| POST | /columns | Create column `{name}` |
+| GET | /columns/:id | Single column with cards/tasks |
+| PUT | /columns/:id | Update column `{name, position}` |
+| DELETE | /columns/:id | Delete column |
+| GET | /cards | All cards with tasks and column context |
+| POST | /cards | Create card `{columnId, name, color?}` |
+| GET | /cards/:id | Single card with tasks |
+| PUT | /cards/:id | Update card `{name, color, position, columnId}` |
+| DELETE | /cards/:id | Delete card (cascades tasks) |
+| GET | /tasks | All tasks with card/column context |
+| POST | /tasks | Create task `{cardId, name, completed?, dueDate?, position?}` |
+| GET | /tasks/:id | Single task with context |
+| PUT | /tasks/:id | Update task `{name, completed, dueDate, position}` |
+| DELETE | /tasks/:id | Delete task |
+| POST | /tasks/:id/move | Move task `{targetCardId, position?}` |
+
+### Example
+```bash
+curl -H "Authorization: Bearer cdy_..." https://cardything.ms2-lab.com/api/v1/tasks
+curl -X POST -H "Authorization: Bearer cdy_..." -H "Content-Type: application/json" \
+  -d '{"cardId": "...", "name": "New task"}' https://cardything.ms2-lab.com/api/v1/tasks
+```
 
 ## Completed
 
