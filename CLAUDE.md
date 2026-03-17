@@ -35,7 +35,7 @@ sudo journalctl -u cardything -f
 
 ## Tech Stack
 
-- Next.js 14, TypeScript, Tailwind CSS
+- Next.js 15, TypeScript, Tailwind CSS
 - Prisma ORM, PostgreSQL
 - NextAuth.js + Autentico
 - Zustand (state), @hello-pangea/dnd (drag-drop), FullCalendar
@@ -57,10 +57,11 @@ src/
 
 ## Features
 
-- **Kanban**: Drag-drop cards between columns, color coding, zoom/spacing controls
+- **Kanban**: Drag-drop cards and columns, color coding, zoom controls (−/+/1:1/fit)
 - **Calendar**: FullCalendar with external drag, bidirectional scheduling
 - **Text**: Edit board as plain text with tab hierarchy
-- **Tasks**: Due dates, completion tracking, color-coded urgency
+- **Tasks**: Due dates, completion tracking, color-coded urgency, hide completed toggle
+- **Settings**: Background color, due date colors, spacing control, date thresholds
 
 ## Auth Flow
 
@@ -82,8 +83,23 @@ AUTENTICO_APP_ID="cardything"
 
 User, Board, Column, Card, Task, UserSettings (all via Prisma)
 
-## TODO
+## Completed
 
-- [x] Add ability to rename/edit columns (currently can only add new columns)
+- [x] Add ability to rename/edit columns
 - [x] Add ability to delete columns (with empty check)
 - [x] Fix mobile/tablet UI (hover-only elements now visible)
+- [x] Fix card drag-drop (same-column reorder was deleting cards)
+- [x] Add column drag-drop reordering
+- [x] Add hide completed tasks toggle
+- [x] Improve zoom controls (−/+/1:1/fit-to-width)
+- [x] Redesign settings modal (wider, two-column layout)
+
+## TODO
+
+- [ ] Calendar subscription (ICS feed for native calendar apps)
+- [ ] Calendar view: Organize task sidebar as collapsible hierarchy (Columns > Cards > Tasks) for easy drill-down
+- [ ] Calendar view: Fix draggable task outline to be smaller/more compact
+
+## Native App
+
+See [ios_plan.md](./ios_plan.md) for iOS/iPadOS/macOS native app plan.
