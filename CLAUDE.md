@@ -130,6 +130,7 @@ curl -X POST -H "Authorization: Bearer cdy_..." -H "Content-Type: application/js
 - [x] Add hide completed tasks toggle
 - [x] Improve zoom controls (−/+/1:1/fit-to-width)
 - [x] Redesign settings modal (wider, two-column layout)
+- [x] Hide fully-completed cards when hide-completed toggle is active
 
 ## TODO
 
