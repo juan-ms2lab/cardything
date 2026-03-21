@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { getSpacingConfig } from '@/utils/spacing'
 
 export function KanbanBoard() {
-  const { board, moveCard, moveColumn, addCard, addColumn, updateColumn, deleteColumn, settings } = useKanbanStore()
+  const { board, moveCard, moveColumn, addCard, addColumn, updateColumn, deleteColumn, settings, hideCompletedTasks } = useKanbanStore()
   const spacingConfig = getSpacingConfig(settings?.spacingLevel)
   const [newCardName, setNewCardName] = useState('')
   const [addingCardToColumn, setAddingCardToColumn] = useState<string | null>(null)
@@ -192,6 +192,7 @@ export function KanbanBoard() {
                                 style={{ gap: spacingConfig.cardGap, display: 'flex', flexDirection: 'column' }}
                               >
                                 {column.cards
+                                  .filter(card => !hideCompletedTasks || card.tasks.length === 0 || card.tasks.some(t => !t.completed))
                                   .sort((a, b) => a.position - b.position)
                                   .map((card, index) => (
                                     <Draggable key={card.id} draggableId={card.id} index={index}>
