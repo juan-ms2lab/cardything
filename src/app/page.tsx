@@ -2,9 +2,10 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useKanbanStore } from '@/store/kanban'
 import { KanbanBoard } from '@/components/KanbanBoard'
+import { MobileKanbanView } from '@/components/MobileKanbanView'
 import { TextView } from '@/components/TextView'
 import { CalendarView } from '@/components/CalendarView'
 import { MindMapView } from '@/components/MindMapView'
@@ -40,6 +41,15 @@ export default function Home() {
     setHideCompletedTasks
   } = useKanbanStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     if (status === 'loading') return
@@ -113,36 +123,60 @@ export default function Home() {
     >
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
+        <div className="px-3 md:px-6 py-3 md:py-4">
+          {/* Top row: title + user actions */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-gray-900">
-                Cardything
-              </h1>
-              
-              {/* View Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                {viewButtons.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setCurrentView(id as 'kanban' | 'text' | 'calendar' | 'mindmap')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      currentView === id
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {label}
-                  </button>
-                ))}
+            <h1 className="text-lg md:text-2xl font-bold text-gray-900">
+              Cardything
+            </h1>
+
+            {/* User Menu */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="hidden md:flex items-center gap-2 text-gray-700">
+                <User className="w-4 h-4" />
+                <span className="text-sm">{session.user?.name || session.user?.email}</span>
               </div>
+
+              <button
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Bottom row: view toggle + contextual controls */}
+          <div className="flex items-center justify-between mt-2 md:mt-3 gap-2">
+            {/* View Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1 flex-shrink-0">
+              {viewButtons.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setCurrentView(id as 'kanban' | 'text' | 'calendar' | 'mindmap')}
+                  className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-md text-xs md:text-sm font-medium transition-colors ${
+                    currentView === id
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
             </div>
 
-            {/* Contextual Controls - only show for relevant views */}
-            <div className="flex items-center gap-3">
-              {/* Zoom Controls - for kanban view only */}
-              {currentView === 'kanban' && (
+            {/* Contextual Controls */}
+            <div className="flex items-center gap-2 md:gap-3">
+              {/* Zoom Controls - desktop kanban only */}
+              {currentView === 'kanban' && !isMobile && (
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setZoomLevel(Math.max(25, zoomLevel - 5))}
@@ -174,12 +208,10 @@ export default function Home() {
                   <button
                     onClick={() => {
                       if (!board) return
-                      // Calculate zoom to fit all columns
-                      // Each column is 320px wide + gap (default ~16px)
                       const columnCount = board.columns.length
                       const columnWidth = 320
                       const gap = 16
-                      const padding = 80 // p-6 on each side + add button
+                      const padding = 80
                       const totalWidth = columnCount * columnWidth + (columnCount - 1) * gap + padding
                       const viewportWidth = window.innerWidth
                       const fitZoom = Math.floor((viewportWidth / totalWidth) * 100)
@@ -193,11 +225,11 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Hide Completed Toggle - for kanban view only */}
+              {/* Hide Completed Toggle - kanban view */}
               {currentView === 'kanban' && (
                 <button
                   onClick={() => setHideCompletedTasks(!hideCompletedTasks)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+                  className={`flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs transition-colors ${
                     hideCompletedTasks
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -209,31 +241,9 @@ export default function Home() {
                   ) : (
                     <Eye className="w-4 h-4" />
                   )}
-                  <span>{hideCompletedTasks ? 'Hidden' : 'Completed'}</span>
+                  <span className="hidden sm:inline">{hideCompletedTasks ? 'Hidden' : 'Completed'}</span>
                 </button>
               )}
-            </div>
-
-            {/* User Menu */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-gray-700">
-                <User className="w-4 h-4" />
-                <span className="text-sm">{session.user?.name || session.user?.email}</span>
-              </div>
-              
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              
-              <button
-                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
             </div>
           </div>
         </div>
@@ -251,7 +261,7 @@ export default function Home() {
             minHeight: currentView === 'kanban' || currentView === 'calendar' ? `${100 / (zoomLevel / 100)}vh` : 'auto'
           }}
         >
-          {currentView === 'kanban' && <KanbanBoard />}
+          {currentView === 'kanban' && (isMobile ? <MobileKanbanView /> : <KanbanBoard />)}
           {currentView === 'text' && <TextView />}
           {currentView === 'calendar' && <CalendarView />}
           {currentView === 'mindmap' && <MindMapView />}

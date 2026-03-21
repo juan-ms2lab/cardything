@@ -3,7 +3,7 @@
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useKanbanStore } from '@/store/kanban'
 import { KanbanCard } from './KanbanCard'
-import { Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { getSpacingConfig } from '@/utils/spacing'
 
@@ -16,6 +16,19 @@ export function KanbanBoard() {
   const [isAddingColumn, setIsAddingColumn] = useState(false)
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null)
   const [editingColumnName, setEditingColumnName] = useState('')
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(new Set())
+
+  const toggleColumn = (columnId: string) => {
+    setCollapsedColumns(prev => {
+      const next = new Set(prev)
+      if (next.has(columnId)) {
+        next.delete(columnId)
+      } else {
+        next.add(columnId)
+      }
+      return next
+    })
+  }
 
   if (!board) {
     return <div className="flex items-center justify-center h-64 text-gray-500">No board loaded</div>
@@ -160,7 +173,20 @@ export function KanbanBoard() {
                               </div>
                             ) : (
                               <>
-                                <h3 className="font-semibold text-gray-900">{column.name}</h3>
+                                <div className="flex items-center gap-1 min-w-0 flex-1">
+                                  <button
+                                    onClick={() => toggleColumn(column.id)}
+                                    className="p-0.5 text-gray-400 hover:text-gray-700 rounded flex-shrink-0"
+                                    title={collapsedColumns.has(column.id) ? 'Expand column' : 'Collapse column'}
+                                  >
+                                    {collapsedColumns.has(column.id) ? (
+                                      <ChevronRight className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                  <h3 className="font-semibold text-gray-900 truncate">{column.name}</h3>
+                                </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
                                   <button
                                     onClick={() => handleEditColumn(column.id, column.name)}
@@ -181,84 +207,88 @@ export function KanbanBoard() {
                             )}
                           </div>
 
-                          <Droppable droppableId={column.id} type="card">
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className={`min-h-[200px] ${
-                                  snapshot.isDraggingOver ? 'bg-blue-50' : ''
-                                } rounded-md p-2`}
-                                style={{ gap: spacingConfig.cardGap, display: 'flex', flexDirection: 'column' }}
-                              >
-                                {column.cards
-                                  .filter(card => !hideCompletedTasks || card.tasks.length === 0 || card.tasks.some(t => !t.completed))
-                                  .sort((a, b) => a.position - b.position)
-                                  .map((card, index) => (
-                                    <Draggable key={card.id} draggableId={card.id} index={index}>
-                                      {(provided, snapshot) => (
-                                        <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}
-                                          {...provided.dragHandleProps}
-                                          className={`${
-                                            snapshot.isDragging ? 'rotate-3 scale-105' : ''
-                                          } transition-transform`}
-                                        >
-                                          <KanbanCard card={card} />
-                                        </div>
-                                      )}
-                                    </Draggable>
-                                  ))}
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
+                          {!collapsedColumns.has(column.id) && (
+                            <>
+                              <Droppable droppableId={column.id} type="card">
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className={`min-h-[200px] ${
+                                      snapshot.isDraggingOver ? 'bg-blue-50' : ''
+                                    } rounded-md p-2`}
+                                    style={{ gap: spacingConfig.cardGap, display: 'flex', flexDirection: 'column' }}
+                                  >
+                                    {column.cards
+                                      .filter(card => !hideCompletedTasks || card.tasks.length === 0 || card.tasks.some(t => !t.completed))
+                                      .sort((a, b) => a.position - b.position)
+                                      .map((card, index) => (
+                                        <Draggable key={card.id} draggableId={card.id} index={index}>
+                                          {(provided, snapshot) => (
+                                            <div
+                                              ref={provided.innerRef}
+                                              {...provided.draggableProps}
+                                              {...provided.dragHandleProps}
+                                              className={`${
+                                                snapshot.isDragging ? 'rotate-3 scale-105' : ''
+                                              } transition-transform`}
+                                            >
+                                              <KanbanCard card={card} />
+                                            </div>
+                                          )}
+                                        </Draggable>
+                                      ))}
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
 
-                          {addingCardToColumn === column.id ? (
-                            <div className="mt-3 space-y-2">
-                              <input
-                                type="text"
-                                value={newCardName}
-                                onChange={(e) => setNewCardName(e.target.value)}
-                                placeholder="Enter card name..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleAddCard(column.id)
-                                  } else if (e.key === 'Escape') {
-                                    setAddingCardToColumn(null)
-                                    setNewCardName('')
-                                  }
-                                }}
-                              />
-                              <div className="flex gap-2">
+                              {addingCardToColumn === column.id ? (
+                                <div className="mt-3 space-y-2">
+                                  <input
+                                    type="text"
+                                    value={newCardName}
+                                    onChange={(e) => setNewCardName(e.target.value)}
+                                    placeholder="Enter card name..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleAddCard(column.id)
+                                      } else if (e.key === 'Escape') {
+                                        setAddingCardToColumn(null)
+                                        setNewCardName('')
+                                      }
+                                    }}
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleAddCard(column.id)}
+                                      className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                                    >
+                                      Add Card
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setAddingCardToColumn(null)
+                                        setNewCardName('')
+                                      }}
+                                      className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
                                 <button
-                                  onClick={() => handleAddCard(column.id)}
-                                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                                  onClick={() => setAddingCardToColumn(column.id)}
+                                  className="w-full mt-1 flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-all sm:flex hidden group-hover:flex"
                                 >
-                                  Add Card
+                                  <Plus className="w-4 h-4" />
+                                  Add a card
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setAddingCardToColumn(null)
-                                    setNewCardName('')
-                                  }}
-                                  className="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm hover:bg-gray-400"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setAddingCardToColumn(column.id)}
-                              className="w-full mt-1 flex items-center justify-center gap-2 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-all sm:flex hidden group-hover:flex"
-                            >
-                              <Plus className="w-4 h-4" />
-                              Add a card
-                            </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
