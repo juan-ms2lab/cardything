@@ -48,7 +48,7 @@ src/
 │   ├── api/auth/         # Auth routes (Autentico integration)
 │   ├── auth/             # Login, register, verify pages
 │   └── page.tsx          # Main app
-├── components/           # KanbanBoard, CalendarView, TextView
+├── components/           # KanbanBoard, MobileKanbanView, CalendarView, TextView
 ├── lib/
 │   ├── auth.ts           # NextAuth config
 │   └── prisma.ts         # DB client
@@ -57,7 +57,8 @@ src/
 
 ## Features
 
-- **Kanban**: Drag-drop cards and columns, color coding, zoom controls (−/+/1:1/fit)
+- **Kanban**: Drag-drop cards and columns, color coding, zoom controls (−/+/1:1/fit), collapsible columns
+- **Mobile Kanban**: Auto-activates on screens < 768px, single-column stacked layout with accordion-style collapsible columns
 - **Calendar**: FullCalendar with external drag, bidirectional scheduling
 - **Text**: Edit board as plain text with tab hierarchy
 - **Tasks**: Due dates, completion tracking, color-coded urgency, hide completed toggle
@@ -131,6 +132,8 @@ curl -X POST -H "Authorization: Bearer cdy_..." -H "Content-Type: application/js
 - [x] Improve zoom controls (−/+/1:1/fit-to-width)
 - [x] Redesign settings modal (wider, two-column layout)
 - [x] Hide fully-completed cards when hide-completed toggle is active
+- [x] Add mobile-optimized view (single-column stacked layout with collapsible columns)
+- [x] Add collapsible columns to desktop kanban view
 
 ## TODO
 
