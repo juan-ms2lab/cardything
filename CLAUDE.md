@@ -1,146 +1,77 @@
 # Cardything
 
-> **Infrastructure**: See `/srv/CLAUDE.md` | **Ports**: See `/srv/gui_access_urls.md`
+> Infra: see `/srv/CLAUDE.md`. Kanban board with kanban / text / calendar views.
 
-Kanban board app with multiple views (kanban, text, calendar).
-
-- **URL**: https://cardything.ms2-lab.com
-- **Port**: 3011
-- **Service**: `cardything.service`
-- **Database**: PostgreSQL (cardything_prod)
-- **Auth**: Autentico (SIMPLE mode)
-
-## Commands
-
-```bash
-# Development
-npm run dev
-npm run build
-npm run lint
-
-# Database
-npx prisma generate
-npx prisma db push
-npx prisma studio
-
-# Deploy
-npm run build
-cp -r .next/static .next/standalone/.next/
-cp -r public .next/standalone/
-sudo systemctl restart cardything
-
-# Logs
-sudo journalctl -u cardything -f
-```
+- **URL** https://cardything.ms2-lab.com · **Port** 3011 · **Service** `cardything.service` · **DB** `cardything_prod` · **Autentico** SIMPLE, app ID `cardything`
 
 ## Tech Stack
 
-- Next.js 15, TypeScript, Tailwind CSS
-- Prisma ORM, PostgreSQL
-- NextAuth.js + Autentico
-- Zustand (state), @hello-pangea/dnd (drag-drop), FullCalendar
+Next.js 15, TypeScript, Tailwind, Prisma, NextAuth + Autentico, Zustand, `@hello-pangea/dnd`, FullCalendar.
 
 ## Structure
 
 ```
 src/
 ├── app/
-│   ├── api/auth/         # Auth routes (Autentico integration)
-│   ├── auth/             # Login, register, verify pages
-│   └── page.tsx          # Main app
+│   ├── api/auth/         # NextAuth + Autentico
+│   ├── auth/             # login, register, verify
+│   └── page.tsx          # main app
 ├── components/           # KanbanBoard, MobileKanbanView, CalendarView, TextView
-├── lib/
-│   ├── auth.ts           # NextAuth config
-│   └── prisma.ts         # DB client
-└── store/kanban.ts       # Zustand store
+├── lib/{auth,prisma}.ts
+└── store/kanban.ts       # Zustand
 ```
 
 ## Features
 
-- **Kanban**: Drag-drop cards and columns, color coding, zoom controls (−/+/1:1/fit), collapsible columns
-- **Mobile Kanban**: Auto-activates on screens < 768px, single-column stacked layout with accordion-style collapsible columns
-- **Calendar**: FullCalendar with external drag, bidirectional scheduling
-- **Text**: Edit board as plain text with tab hierarchy
-- **Tasks**: Due dates, completion tracking, color-coded urgency, hide completed toggle
-- **Settings**: Background color, due date colors, spacing control, date thresholds
-
-## Auth Flow
-
-1. Register at `/auth/register` → Autentico sends verification email
-2. Verify email → `/auth/setup-account` to set password
-3. Login at `/auth/signin` → Autentico validates → local user sync
-
-## Environment
-
-```env
-DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5432/cardything_prod"
-NEXTAUTH_URL="https://cardything.ms2-lab.com"
-NEXTAUTH_SECRET="generated-secret"
-AUTENTICO_URL="http://localhost:3041"
-AUTENTICO_APP_ID="cardything"
-```
+- **Kanban** — drag-drop cards + columns, color coding, zoom (−/+/1:1/fit), collapsible columns
+- **Mobile Kanban** — auto-activates < 768px, single-column accordion-style
+- **Calendar** — FullCalendar with external drag, bidirectional scheduling
+- **Text** — edit board as plain text with tab hierarchy
+- **Tasks** — due dates, completion tracking, color-coded urgency, hide-completed toggle
+- **Settings** — background color, due-date colors, spacing, date thresholds
 
 ## Database Models
 
-User, Board, Column, Card, Task, UserSettings, ApiKey (all via Prisma)
+`User`, `Board`, `Column`, `Card`, `Task`, `UserSettings`, `ApiKey` (Prisma).
 
-## API Access
+## Public API (`/api/v1/`)
 
-Per-user API key authentication. Keys are managed in Settings > API Access.
+Per-user API key auth. Keys managed in Settings → API Access.
 
-### Authentication
-- `Authorization: Bearer cdy_...` header
-- `X-API-Key: cdy_...` header
-
-### Endpoints (`/api/v1/`)
+**Auth headers:** `Authorization: Bearer cdy_…` or `X-API-Key: cdy_…`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /board | Full board with columns/cards/tasks |
-| GET | /columns | List columns with cards/tasks |
-| POST | /columns | Create column `{name}` |
-| GET | /columns/:id | Single column with cards/tasks |
-| PUT | /columns/:id | Update column `{name, position}` |
-| DELETE | /columns/:id | Delete column |
-| GET | /cards | All cards with tasks and column context |
-| POST | /cards | Create card `{columnId, name, color?}` |
-| GET | /cards/:id | Single card with tasks |
-| PUT | /cards/:id | Update card `{name, color, position, columnId}` |
-| DELETE | /cards/:id | Delete card (cascades tasks) |
-| GET | /tasks | All tasks with card/column context |
-| POST | /tasks | Create task `{cardId, name, completed?, dueDate?, position?}` |
-| GET | /tasks/:id | Single task with context |
-| PUT | /tasks/:id | Update task `{name, completed, dueDate, position}` |
-| DELETE | /tasks/:id | Delete task |
-| POST | /tasks/:id/move | Move task `{targetCardId, position?}` |
+| GET | `/board` | Full board with columns/cards/tasks |
+| GET | `/columns` | List columns with cards/tasks |
+| POST | `/columns` | Create column `{name}` |
+| GET | `/columns/:id` | Single column with cards/tasks |
+| PUT | `/columns/:id` | Update `{name, position}` |
+| DELETE | `/columns/:id` | Delete column |
+| GET | `/cards` | All cards with tasks + column context |
+| POST | `/cards` | Create `{columnId, name, color?}` |
+| GET | `/cards/:id` | Single card with tasks |
+| PUT | `/cards/:id` | Update `{name, color, position, columnId}` |
+| DELETE | `/cards/:id` | Delete (cascades tasks) |
+| GET | `/tasks` | All tasks with card/column context |
+| POST | `/tasks` | Create `{cardId, name, completed?, dueDate?, position?}` |
+| GET | `/tasks/:id` | Single task |
+| PUT | `/tasks/:id` | Update `{name, completed, dueDate, position}` |
+| DELETE | `/tasks/:id` | Delete |
+| POST | `/tasks/:id/move` | Move `{targetCardId, position?}` |
 
-### Example
 ```bash
 curl -H "Authorization: Bearer cdy_..." https://cardything.ms2-lab.com/api/v1/tasks
 curl -X POST -H "Authorization: Bearer cdy_..." -H "Content-Type: application/json" \
   -d '{"cardId": "...", "name": "New task"}' https://cardything.ms2-lab.com/api/v1/tasks
 ```
 
-## Completed
-
-- [x] Add ability to rename/edit columns
-- [x] Add ability to delete columns (with empty check)
-- [x] Fix mobile/tablet UI (hover-only elements now visible)
-- [x] Fix card drag-drop (same-column reorder was deleting cards)
-- [x] Add column drag-drop reordering
-- [x] Add hide completed tasks toggle
-- [x] Improve zoom controls (−/+/1:1/fit-to-width)
-- [x] Redesign settings modal (wider, two-column layout)
-- [x] Hide fully-completed cards when hide-completed toggle is active
-- [x] Add mobile-optimized view (single-column stacked layout with collapsible columns)
-- [x] Add collapsible columns to desktop kanban view
-
 ## TODO
 
 - [ ] Calendar subscription (ICS feed for native calendar apps)
-- [ ] Calendar view: Organize task sidebar as collapsible hierarchy (Columns > Cards > Tasks) for easy drill-down
-- [ ] Calendar view: Fix draggable task outline to be smaller/more compact
+- [ ] Calendar view: collapsible task sidebar (Columns > Cards > Tasks)
+- [ ] Calendar view: smaller draggable task outline
 
 ## Native App
 
-See [ios_plan.md](./ios_plan.md) for iOS/iPadOS/macOS native app plan.
+See [`ios_plan.md`](./ios_plan.md) for the iOS/iPadOS/macOS plan.
